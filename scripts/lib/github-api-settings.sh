@@ -21,11 +21,17 @@ gh_redact_json() {
   # a substring match so that safe plural/container field names GitHub itself
   # uses (e.g. "secrets" listing metadata, "actions_secrets") are not swept up
   # alongside genuinely sensitive singular fields (e.g. "secret", "token").
+  #
+  # The list also covers credential-bearing singular fields that specific
+  # endpoints in the raw snapshot can return: deploy-key material ("key",
+  # "pem") from /keys and encrypted Actions secret payloads ("encrypted_value").
+  # "config.url" on webhooks is intentionally NOT redacted here - it is not a
+  # credential and blanket-redacting every "url" would strip legitimate data.
   jq 'def redact:
         if type == "object" then
           with_entries(
             if (.key | ascii_downcase) as $k
-               | ($k | test("^(secret|token|password|private_key|client_secret|authorization|access_token|api_key|refresh_token)$")) then
+               | ($k | test("^(secret|token|password|private_key|client_secret|authorization|access_token|api_key|refresh_token|key|pem|encrypted_value)$")) then
               .value = "***REDACTED***"
             else
               .value |= redact
@@ -50,13 +56,20 @@ gh_api_get() {
     url="${GH_API_BASE_URL}${path}"
   fi
 
-  local response_file status_code
+  # Pass the token via a curl --config file rather than a -H argument so the
+  # bearer token never appears in the process argument list (visible via
+  # ps/proc to other processes on shared or self-hosted runners).
+  local response_file status_code auth_config
   response_file="$(mktemp)"
+  auth_config="$(mktemp)"
+  chmod 600 "$auth_config"
+  printf 'header = "Authorization: Bearer %s"\n' "${GITHUB_TOKEN:?GITHUB_TOKEN is required}" > "$auth_config"
   status_code=$(curl -sS -o "$response_file" -w '%{http_code}' \
-    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+    --config "$auth_config" \
     -H "Accept: ${accept_header}" \
     -H "X-GitHub-Api-Version: ${GH_API_VERSION}" \
     "$url" 2>/dev/null) || status_code="000"
+  rm -f "$auth_config"
 
   local body
   body="$(cat "$response_file" 2>/dev/null || true)"

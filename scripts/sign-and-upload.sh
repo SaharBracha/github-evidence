@@ -27,9 +27,12 @@ else
   echo "Skipping subject upload for existing subject ${SUBJECT_REPO_PATH}"
 fi
 
-printf '%s\n' "$EVIDENCE_SIGNING_KEY" > evidence-signing-key.pem
-chmod 600 evidence-signing-key.pem
+# Register cleanup before creating the key file, and create it with a
+# restrictive umask, so the private key is never briefly world-readable and is
+# always removed on exit (including if a signal arrives mid-write).
 trap 'rm -f evidence-signing-key.pem' EXIT
+( umask 077; printf '%s\n' "$EVIDENCE_SIGNING_KEY" > evidence-signing-key.pem )
+chmod 600 evidence-signing-key.pem
 
 evd_args=(
   --subject-repo-path "$SUBJECT_REPO_PATH"

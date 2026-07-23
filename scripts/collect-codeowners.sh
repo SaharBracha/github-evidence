@@ -3,7 +3,7 @@
 # its ownership rules, and collects GitHub's own CODEOWNERS validation errors.
 #
 # Correlating these rules with branch-protection / ruleset "require code owner
-# reviews" settings happens in collect-full-settings.sh, once both sections
+# reviews" settings happens in collect-settings-snapshot.sh, once both sections
 # are available. GitHub has no API that returns a per-owner approval count or
 # that predicts the owners of an arbitrary future change - only the declared
 # pattern -> owner rules and whether code-owner review is enforced at all.
@@ -40,13 +40,21 @@ done
 rules="[]"
 if [[ -n "$found_path" ]]; then
   line_number=0
+  # Disable pathname expansion while splitting each CODEOWNERS line into tokens.
+  # Patterns legitimately contain glob metacharacters (e.g. "*.js", "docs/*");
+  # with globbing enabled the unquoted split below would expand them against the
+  # runner's checkout and silently corrupt the recorded pattern. Restore the
+  # caller's previous -f state afterwards.
+  codeowners_noglob_was_set="off"
+  [[ "$-" == *f* ]] && codeowners_noglob_was_set="on"
+  set -f
   while IFS= read -r line || [[ -n "$line" ]]; do
     line_number=$((line_number + 1))
     trimmed="$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
     [[ -z "$trimmed" ]] && continue
     [[ "$trimmed" == \#* ]] && continue
 
-    # shellcheck disable=SC2206
+    # shellcheck disable=SC2206  # intentional word-split; globbing disabled via set -f
     tokens=($trimmed)
     pattern="${tokens[0]}"
     owners=("${tokens[@]:1}")
@@ -55,6 +63,7 @@ if [[ -n "$found_path" ]]; then
     rules="$(jq -c -n --argjson acc "$rules" --arg pattern "$pattern" --argjson owners "$owners_json" --argjson line "$line_number" \
       '$acc + [{pattern: $pattern, owners: $owners, line: $line}]')"
   done <<< "$raw_content"
+  [[ "$codeowners_noglob_was_set" == "off" ]] && set +f
 fi
 
 errors_section="$(gh_section_get "${repo_path}/codeowners/errors")"
