@@ -87,14 +87,16 @@ runs:
         set -euo pipefail
 
         owner="${GITHUB_REPOSITORY%%/*}"
-        change_sha="$MERGE_COMMIT_SHA"
+        # Short form of the merge commit SHA (first 8 chars) keeps subject paths
+        # readable; full-length collisions aren't a concern within one repo.
+        change_sha="${MERGE_COMMIT_SHA:0:8}"
 
         # Collect one evidence type, shape its predicate + subject, render a
         # human-readable markdown report, then sign and upload it. Runtime
         # working files are reused between calls, so each call signs and uploads
         # before the next overwrites them. Both evidence types share one subject
-        # naming structure — <owner>-<type>-<merge-commit-sha> — so they stay
-        # aligned and are keyed to the same change.
+        # naming structure — <owner>-<type>-<short-merge-commit-sha> — so they
+        # stay aligned and are keyed to the same change.
         generate() {
           local etype="$1" predicate_type="$2"
           local subject_repo_path="git-evidence/${etype}/${owner}-${etype}-${change_sha}.json"
