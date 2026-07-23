@@ -6,12 +6,10 @@ Artifactory as **signed JFrog evidence**. It runs when a pull request is
 
 - **Branch protection** — a normalized snapshot of the repository's protected
   branches, rulesets, and CODEOWNERS enforcement at merge time.
-  ([spec](predicates/branch-protection.md) ·
-  [schema](predicates/branch-protection.json))
+  ([schema](predicates/branch-protection.json))
 - **Merged pull request** — who approved the PR, what commits it put on the
   target branch, and who authored them.
-  ([spec](predicates/pull-request-merge.md) ·
-  [schema](predicates/pull-request-merge.json))
+  ([schema](predicates/pull-request-merge.json))
 
 The action installs the JFrog CLI itself, so you only supply your JFrog
 credentials and signing key.
@@ -89,13 +87,13 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 
 ## Predicates
 
-Each evidence type ships a human-readable spec (`.md`) and a machine-readable
-JSON Schema (`.json`):
+Each evidence type ships a machine-readable JSON Schema (`.json`) describing its
+predicate. At merge time the action also generates a human-readable report from
+the run's actual data and attaches it to the evidence (`jf evd create
+--markdown`), visible in the JFrog evidence Content tab.
 
-- Branch protection — [`branch-protection.md`](predicates/branch-protection.md) ·
-  [`branch-protection.json`](predicates/branch-protection.json)
-- Merged pull request — [`pull-request-merge.md`](predicates/pull-request-merge.md) ·
-  [`pull-request-merge.json`](predicates/pull-request-merge.json)
+- Branch protection — [`branch-protection.json`](predicates/branch-protection.json)
+- Merged pull request — [`pull-request-merge.json`](predicates/pull-request-merge.json)
 
 ## Publishing to the GitHub Marketplace
 

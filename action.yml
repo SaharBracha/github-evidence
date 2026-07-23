@@ -76,6 +76,7 @@ runs:
         GH_API_HOST: ${{ inputs.gh_api_host }}
         GITHUB_API_URL: ${{ inputs.gh_api_host }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         INCLUDE_RAW_SNAPSHOT: ${{ inputs.include_raw_snapshot }}
         COLLECTOR_VERSION: git-evidence
         UPLOAD_SUBJECT: ${{ inputs.upload_subject }}
@@ -86,14 +87,17 @@ runs:
         set -euo pipefail
 
         owner="${GITHUB_REPOSITORY%%/*}"
-        repo="${GITHUB_REPOSITORY##*/}"
-        ts="$(date -u +%Y%m%dT%H%M%SZ)"
+        change_sha="$MERGE_COMMIT_SHA"
 
-        # Collect one evidence type, shape its predicate + subject, then sign and
-        # upload it. Runtime working files are reused between calls, so each call
-        # signs and uploads before the next overwrites them.
+        # Collect one evidence type, shape its predicate + subject, render a
+        # human-readable markdown report, then sign and upload it. Runtime
+        # working files are reused between calls, so each call signs and uploads
+        # before the next overwrites them. Both evidence types share one subject
+        # naming structure — <owner>-<type>-<merge-commit-sha> — so they stay
+        # aligned and are keyed to the same change.
         generate() {
-          local etype="$1" predicate_type="$2" subject_repo_path="$3"
+          local etype="$1" predicate_type="$2"
+          local subject_repo_path="git-evidence/${etype}/${owner}-${etype}-${change_sha}.json"
           echo "::group::${etype} evidence"
 
           case "$etype" in
@@ -105,9 +109,13 @@ runs:
             PREDICATE_TYPE="$predicate_type" \
             "$AP/scripts/build-predicate.sh"
 
+          EVIDENCE_TYPE="$etype" PREDICATE_FILE=predicate.json \
+            SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \
+            "$AP/scripts/build-markdown.sh"
+
           SUBJECT_FILE=subject.json PREDICATE_FILE=predicate.json \
             SUBJECT_REPO_PATH="$subject_repo_path" PREDICATE_TYPE="$predicate_type" \
-            MARKDOWN_FILE="$AP/predicates/${etype}.md" \
+            MARKDOWN_FILE=report.md \
             "$AP/scripts/sign-and-upload.sh"
 
           echo "::endgroup::"
@@ -117,9 +125,7 @@ runs:
         # calling job on github.event.pull_request.merged == true). Both evidence
         # types are recorded for that merge.
         generate "branch-protection" \
-          "https://jfrog.com/evidence/branch-protection/v1" \
-          "git-evidence/branch-protection/${owner}-${repo}-${ts}.json"
+          "https://jfrog.com/evidence/branch-protection/v1"
 
         generate "pull-request-merge" \
-          "https://jfrog.com/evidence/pull-request-merge/v1" \
-          "git-evidence/pull-request-merge/${owner}-${repo}-pr-${PR_NUMBER}.json"
+          "https://jfrog.com/evidence/pull-request-merge/v1"
