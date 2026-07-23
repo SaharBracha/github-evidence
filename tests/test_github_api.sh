@@ -16,13 +16,15 @@ export GITHUB_TOKEN="test-token"
 
 test_redact_strips_nested_secret_like_keys() {
   local input redacted
-  input='{"config":{"url":"https://example.com","secret":"abc123"},"token":"xyz","nested":[{"password":"p1"},{"safe":"keep-me"}]}'
+  input='{"config":{"url":"https://example.com","secret":"abc123"},"token":"xyz","key":"ssh-rsa AAAA","encrypted_value":"ZW5j","nested":[{"password":"p1"},{"safe":"keep-me"}]}'
   redacted="$(printf '%s' "$input" | gh_redact_json)"
   assert_equal "***REDACTED***" "$(printf '%s' "$redacted" | jq -r '.config.secret')" "config.secret should be redacted" || return 1
   assert_equal "***REDACTED***" "$(printf '%s' "$redacted" | jq -r '.token')" "top-level token should be redacted" || return 1
+  assert_equal "***REDACTED***" "$(printf '%s' "$redacted" | jq -r '.key')" "deploy-key material (key) should be redacted" || return 1
+  assert_equal "***REDACTED***" "$(printf '%s' "$redacted" | jq -r '.encrypted_value')" "encrypted secret payloads should be redacted" || return 1
   assert_equal "***REDACTED***" "$(printf '%s' "$redacted" | jq -r '.nested[0].password')" "nested password should be redacted" || return 1
   assert_equal "keep-me" "$(printf '%s' "$redacted" | jq -r '.nested[1].safe')" "unrelated fields must survive redaction" || return 1
-  assert_equal "https://example.com" "$(printf '%s' "$redacted" | jq -r '.config.url')" "non-secret fields must survive redaction"
+  assert_equal "https://example.com" "$(printf '%s' "$redacted" | jq -r '.config.url')" "non-secret fields (incl. webhook config.url) must survive redaction"
 }
 
 test_section_from_result_success() {

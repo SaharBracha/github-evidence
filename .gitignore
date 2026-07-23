@@ -1,4 +1,5 @@
 .idea/
+.claude/
 .DS_Store
 # Working files produced at action runtime
 raw-snapshot.json

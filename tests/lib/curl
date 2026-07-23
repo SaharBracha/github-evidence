@@ -3,8 +3,11 @@
 # canned responses from the JSON routing table pointed to by
 # $MOCK_CURL_FIXTURE: an array of {path, query?, status, body} rules.
 #
-# Only understands the exact curl invocation shape github-api.sh uses:
-#   curl -sS -o <file> -w '%{http_code}' -H ... -H ... -H ... <url>
+# Only understands the curl invocation shapes the api libs use:
+#   curl -sS -o <file> -w '%{http_code}' --config <auth> -H ... -H ... <url>
+#   curl -sS -D <hdrs> -o <file> -w '%{http_code}' --config <auth> -H ... <url>
+# The bearer token is supplied via the --config file (which this mock ignores),
+# so it never appears in the argument list.
 set -euo pipefail
 
 args=("$@")
@@ -17,7 +20,7 @@ while [[ $i -lt ${#args[@]} ]]; do
       i=$((i + 1))
       out_file="${args[$i]}"
       ;;
-    -H|-w)
+    -H|-w|-D|-K|--config)
       i=$((i + 1))
       ;;
     -sS|-L)

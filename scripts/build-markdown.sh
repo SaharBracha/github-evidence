@@ -26,7 +26,7 @@ case "$EVIDENCE_TYPE" in
     fi
 
     jq -r --argjson subj "$subject_json" '
-      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "")) end;
+      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
       def dash: if . == null or . == "" then "—" else (. | safe) end;
       def repo_slug: ($subj.repo_url // "") | safe | (split("/") | if length >= 2 then .[-2:] | join("/") else (. | join("/")) end);
 
@@ -66,7 +66,7 @@ case "$EVIDENCE_TYPE" in
 
   branch-protection)
     jq -r '
-      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "")) end;
+      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
       def dash: if . == null or . == "" then "—" else (. | safe) end;
       def yn: if . then "yes" else "no" end;
       (.raw_snapshot.sections.branch_protection.rulesets // {}) as $rs_raw

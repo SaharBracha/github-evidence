@@ -29,6 +29,17 @@ github_compare_commit_shas() {
   # inside JSON strings. Keep tab, newline, and carriage return JSON whitespace.
   diff_response=$(printf '%s' "$diff_response" | LC_ALL=C tr -d '\000-\010\013-\014\016-\037')
 
+  # GitHub's compare endpoint caps the returned .commits array at 250 while
+  # .total_commits reports the true count. Warn when the list is truncated so
+  # an incomplete commits_on_target_branch is visible in the run log rather
+  # than silently under-reported.
+  local total_commits collected
+  total_commits=$(printf '%s' "$diff_response" | jq -r '.total_commits // (.commits | length)')
+  collected=$(printf '%s' "$diff_response" | jq '.commits | length')
+  if [[ "$total_commits" -gt "$collected" ]]; then
+    echo "::warning::compare ${previous_sha}...${current_sha} reports ${total_commits} commits but the API returned ${collected} (GitHub caps compare results at 250); commits_on_target_branch is incomplete." >&2
+  fi
+
   echo "$diff_response" | jq '[.commits[].sha]'
 }
 
