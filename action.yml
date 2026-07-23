@@ -107,6 +107,7 @@ runs:
 
           SUBJECT_FILE=subject.json PREDICATE_FILE=predicate.json \
             SUBJECT_REPO_PATH="$subject_repo_path" PREDICATE_TYPE="$predicate_type" \
+            MARKDOWN_FILE="$AP/predicates/${etype}.md" \
             "$AP/scripts/sign-and-upload.sh"
 
           echo "::endgroup::"

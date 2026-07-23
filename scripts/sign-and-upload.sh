@@ -5,7 +5,8 @@
 #
 # Required env: SUBJECT_FILE, SUBJECT_REPO_PATH, PREDICATE_FILE, PREDICATE_TYPE,
 #               PROJECT_KEY, EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
-# Optional env: UPLOAD_SUBJECT (default "true").
+# Optional env: UPLOAD_SUBJECT (default "true"),
+#               MARKDOWN_FILE (human-readable report attached via --markdown).
 set -euo pipefail
 
 : "${SUBJECT_FILE:?SUBJECT_FILE must be set}"
@@ -30,12 +31,24 @@ printf '%s\n' "$EVIDENCE_SIGNING_KEY" > evidence-signing-key.pem
 chmod 600 evidence-signing-key.pem
 trap 'rm -f evidence-signing-key.pem' EXIT
 
-jf evd create \
-  --subject-repo-path "$SUBJECT_REPO_PATH" \
-  --predicate "$PREDICATE_FILE" \
-  --key ./evidence-signing-key.pem \
-  --key-alias "$EVIDENCE_KEY_ALIAS" \
-  --predicate-type "$PREDICATE_TYPE" \
+evd_args=(
+  --subject-repo-path "$SUBJECT_REPO_PATH"
+  --predicate "$PREDICATE_FILE"
+  --key ./evidence-signing-key.pem
+  --key-alias "$EVIDENCE_KEY_ALIAS"
+  --predicate-type "$PREDICATE_TYPE"
   --project "$PROJECT_KEY"
+)
+
+if [ -n "${MARKDOWN_FILE:-}" ]; then
+  if [ -f "$MARKDOWN_FILE" ]; then
+    echo "Attaching markdown report ${MARKDOWN_FILE}"
+    evd_args+=(--markdown "$MARKDOWN_FILE")
+  else
+    echo "::warning::MARKDOWN_FILE set but not found: ${MARKDOWN_FILE}; skipping --markdown" >&2
+  fi
+fi
+
+jf evd create "${evd_args[@]}"
 
 echo "Evidence uploaded successfully"
