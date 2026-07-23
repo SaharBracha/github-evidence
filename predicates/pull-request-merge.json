@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jfrog.com/evidence/pull-request-merge/v1",
+  "title": "Merged Pull Request Evidence",
+  "description": "The pull-request-merge predicate created by the jfrog/git-evidence action (evidence_type=pull-request-merge).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "subject_type",
+    "predicate_type",
+    "merge",
+    "approvers",
+    "commits_on_target_branch",
+    "code_committers",
+    "collection"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.2"
+    },
+    "subject_type": {
+      "const": "PullRequestMerge"
+    },
+    "predicate_type": {
+      "const": "https://jfrog.com/evidence/pull-request-merge/v1"
+    },
+    "merge": {
+      "$ref": "#/$defs/merge"
+    },
+    "approvers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/approver"
+      }
+    },
+    "commits_on_target_branch": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "code_committers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/codeCommitter"
+      }
+    },
+    "collection": {
+      "$ref": "#/$defs/collection"
+    }
+  },
+  "$defs": {
+    "merge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "merge_commit_sha",
+        "merged_at",
+        "merged_by",
+        "target_branch",
+        "target_base_sha"
+      ],
+      "properties": {
+        "merge_commit_sha": {
+          "type": "string"
+        },
+        "merged_at": {
+          "type": "string"
+        },
+        "merged_by": {
+          "type": "string"
+        },
+        "target_branch": {
+          "type": "string"
+        },
+        "target_base_sha": {
+          "type": "string"
+        }
+      }
+    },
+    "approver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_id",
+        "login",
+        "body",
+        "submitted_at",
+        "approved_sha",
+        "is_pr_head_approval"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "integer"
+        },
+        "login": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "body": {
+          "type": "string"
+        },
+        "submitted_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approved_sha": {
+          "type": "string"
+        },
+        "is_pr_head_approval": {
+          "type": "boolean"
+        }
+      }
+    },
+    "codeCommitter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "login",
+        "email"
+      ],
+      "properties": {
+        "login": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "description": "Lowercase commit-author email, or an empty string when unavailable."
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collected_at",
+        "workflow_run_url"
+      ],
+      "properties": {
+        "collected_at": {
+          "type": "string",
+          "description": "UTC timestamp emitted by `date -u +%Y-%m-%dT%H:%M:%S.000Z`.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.000Z$"
+        },
+        "workflow_run_url": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

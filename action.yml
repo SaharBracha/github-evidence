@@ -1,0 +1,124 @@
+name: 'JFrog Git Evidence'
+description: >-
+  Collect Git evidence and attach it to Artifactory as signed JFrog evidence.
+  On a merged pull request, records both the repository branch-protection
+  settings and the merge's approvers, commits, and committers.
+author: JFrog
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  jf_url:
+    description: 'JFrog platform host (bare host or URL; normalized to https://<host>/).'
+    required: true
+  oidc_provider_name:
+    description: >-
+      Name of the OIDC integration configured in the JFrog platform. The runner
+      exchanges its GitHub OIDC token for a JFrog access token via this provider,
+      so no long-lived access token is stored. Requires `id-token: write`.
+    required: true
+  jf_project:
+    description: 'JFrog project key.'
+    required: true
+  evidence_signing_key:
+    description: 'Private key (raw PEM contents) used to sign the evidence.'
+    required: true
+  evidence_key_alias:
+    description: 'Evidence signing key alias registered in the JFrog platform.'
+    required: true
+  github_token:
+    description: 'GitHub token used to read repository data.'
+    required: false
+    default: ${{ github.token }}
+  gh_api_host:
+    description: 'GitHub REST API base URL (set for GHES).'
+    required: false
+    default: 'https://api.github.com'
+  upload_subject:
+    description: 'Whether to upload the subject artifact before attaching evidence.'
+    required: false
+    default: 'true'
+  include_raw_snapshot:
+    description: 'Embed the full collector snapshot in the branch-protection predicate.'
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Normalize JFrog URL
+      shell: bash
+      env:
+        JF_URL_INPUT: ${{ inputs.jf_url }}
+      run: |
+        set -euo pipefail
+        host="$JF_URL_INPUT"
+        host="${host#http://}"
+        host="${host#https://}"
+        host="${host%/}"
+        echo "JF_URL=https://${host}/" >> "$GITHUB_ENV"
+
+    - name: Setup JFrog CLI
+      uses: jfrog/setup-jfrog-cli@v4.9.1
+      env:
+        JF_URL: ${{ env.JF_URL }}
+        JF_PROJECT: ${{ inputs.jf_project }}
+      with:
+        oidc-provider-name: ${{ inputs.oidc_provider_name }}
+
+    - name: Generate git evidence
+      shell: bash
+      env:
+        AP: ${{ github.action_path }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GH_API_HOST: ${{ inputs.gh_api_host }}
+        GITHUB_API_URL: ${{ inputs.gh_api_host }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        INCLUDE_RAW_SNAPSHOT: ${{ inputs.include_raw_snapshot }}
+        COLLECTOR_VERSION: git-evidence
+        UPLOAD_SUBJECT: ${{ inputs.upload_subject }}
+        PROJECT_KEY: ${{ inputs.jf_project }}
+        EVIDENCE_SIGNING_KEY: ${{ inputs.evidence_signing_key }}
+        EVIDENCE_KEY_ALIAS: ${{ inputs.evidence_key_alias }}
+      run: |
+        set -euo pipefail
+
+        owner="${GITHUB_REPOSITORY%%/*}"
+        repo="${GITHUB_REPOSITORY##*/}"
+        ts="$(date -u +%Y%m%dT%H%M%SZ)"
+
+        # Collect one evidence type, shape its predicate + subject, then sign and
+        # upload it. Runtime working files are reused between calls, so each call
+        # signs and uploads before the next overwrites them.
+        generate() {
+          local etype="$1" predicate_type="$2" subject_repo_path="$3"
+          echo "::group::${etype} evidence"
+
+          case "$etype" in
+            pull-request-merge) "$AP/scripts/collect-pr-merge.sh" > raw-snapshot.json ;;
+            branch-protection)  "$AP/scripts/collect-settings-snapshot.sh" > raw-snapshot.json ;;
+          esac
+
+          EVIDENCE_TYPE="$etype" RAW_SNAPSHOT_FILE=raw-snapshot.json \
+            PREDICATE_TYPE="$predicate_type" \
+            "$AP/scripts/build-predicate.sh"
+
+          SUBJECT_FILE=subject.json PREDICATE_FILE=predicate.json \
+            SUBJECT_REPO_PATH="$subject_repo_path" PREDICATE_TYPE="$predicate_type" \
+            "$AP/scripts/sign-and-upload.sh"
+
+          echo "::endgroup::"
+        }
+
+        # This action is intended to run on a merged pull request (gate the
+        # calling job on github.event.pull_request.merged == true). Both evidence
+        # types are recorded for that merge.
+        generate "branch-protection" \
+          "https://jfrog.com/evidence/branch-protection/v1" \
+          "git-evidence/branch-protection/${owner}-${repo}-${ts}.json"
+
+        generate "pull-request-merge" \
+          "https://jfrog.com/evidence/pull-request-merge/v1" \
+          "git-evidence/pull-request-merge/${owner}-${repo}-pr-${PR_NUMBER}.json"

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck
+        run: |
+          shellcheck --severity=warning \
+            scripts/*.sh \
+            scripts/lib/*.sh \
+            tests/*.sh \
+            tests/lib/curl
+
+      - name: Actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-check
+
+      - name: Validate JSON fixtures and predicate schemas
+        run: |
+          for f in tests/fixtures/*.json tests/fixtures/pr-merge/*.json predicates/*.json; do
+            echo "Validating $f"
+            jq . "$f" >/dev/null
+          done
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run fixture-driven test suites
+        run: bash tests/run-tests.sh
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect this repository's own settings snapshot
+        run: |
+          set -euo pipefail
+          bash scripts/collect-settings-snapshot.sh > snapshot.json
+          jq -e '.schema_version and .repository.full_name and .sections.branch_protection' snapshot.json >/dev/null
+          echo "Snapshot collected and validated."

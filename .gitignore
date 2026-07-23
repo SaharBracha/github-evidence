@@ -1,0 +1,8 @@
+.idea/
+.DS_Store
+# Working files produced at action runtime
+raw-snapshot.json
+predicate.json
+subject.json
+snapshot.json
+evidence-signing-key.pem
