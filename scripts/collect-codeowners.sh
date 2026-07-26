@@ -10,8 +10,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api-settings.sh
-source "${SCRIPT_DIR}/lib/github-api-settings.sh"
+# shellcheck source=./lib/github-api.sh
+source "${SCRIPT_DIR}/lib/github-api.sh"
 
 : "${GH_OWNER:?GH_OWNER must be set}"
 : "${GH_REPO:?GH_REPO must be set}"
@@ -26,7 +26,7 @@ found_path=""
 raw_content=""
 
 for candidate in "${candidate_paths[@]}"; do
-  result="$(gh_api_get "${repo_path}/contents/${candidate}" "application/vnd.github.raw")"
+  result="$(gh_http_get "${repo_path}/contents/${candidate}" "application/vnd.github.raw")"
   status="$(printf '%s' "$result" | jq -r '.status')"
   if [[ "$status" == "200" ]]; then
     found_path="$candidate"

@@ -2,7 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/github-api-pr.sh"
+# shellcheck source=./github-api.sh
+source "${SCRIPT_DIR}/github-api.sh"
 
 github_get_pr_commits_json() {
   local gh_api_host="$1"
@@ -10,7 +11,7 @@ github_get_pr_commits_json() {
   local repo="$3"
   local pr_number="$4"
 
-  github_api_get_json_array_paginated \
+  gh_get_paginated_array \
     "${gh_api_host}/repos/${owner}/${repo}/pulls/${pr_number}/commits?per_page=100&page=1"
 }
 

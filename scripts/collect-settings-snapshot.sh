@@ -6,16 +6,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api-settings.sh
-source "${SCRIPT_DIR}/lib/github-api-settings.sh"
+# shellcheck source=./lib/github-api.sh
+source "${SCRIPT_DIR}/lib/github-api.sh"
+# shellcheck source=./lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
 SCHEMA_VERSION="1.0.0"
 
 : "${GITHUB_TOKEN:?GITHUB_TOKEN must be set; pass github.token via env in action.yml}"
-: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set (automatically provided by the runner)}"
 
-GH_OWNER="${GH_OWNER:-${GITHUB_REPOSITORY%%/*}}"
-GH_REPO="${GH_REPO:-${GITHUB_REPOSITORY##*/}}"
+resolve_owner_repo
 export GH_OWNER GH_REPO GITHUB_TOKEN
 
 branch_protection="$("${SCRIPT_DIR}/collect-branch-protection.sh")"
@@ -65,7 +65,7 @@ code_owner_enforcement="$(jq -n \
   }
   ')"
 
-generated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+generated_at="$(rfc3339_now)"
 
 jq -n \
   --arg schema_version "$SCHEMA_VERSION" \

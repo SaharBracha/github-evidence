@@ -7,27 +7,27 @@
 # server identity are derived from the runner-provided environment; the PR to
 # collect is passed as PR_NUMBER.
 #
-# Required env: GH_TOKEN, PR_NUMBER, GITHUB_REPOSITORY.
-# Optional env: GH_API_HOST (default https://api.github.com),
+# Required env: GITHUB_TOKEN, PR_NUMBER, GITHUB_REPOSITORY.
+# Optional env: GITHUB_API_URL (default https://api.github.com),
 #               GITHUB_SERVER_URL (default https://github.com), GITHUB_RUN_ID.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api-pr.sh
-source "${SCRIPT_DIR}/lib/github-api-pr.sh"
+# shellcheck source=./lib/github-api.sh
+source "${SCRIPT_DIR}/lib/github-api.sh"
+# shellcheck source=./lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
-: "${GH_TOKEN:?GH_TOKEN must be set}"
+: "${GITHUB_TOKEN:?GITHUB_TOKEN must be set}"
 : "${PR_NUMBER:?PR_NUMBER must be set}"
-: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set (automatically provided by the runner)}"
 
-GH_API_HOST="${GH_API_HOST:-https://api.github.com}"
+resolve_owner_repo
+GH_API_URL="${GITHUB_API_URL:-https://api.github.com}"
 SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
-OWNER="${GITHUB_REPOSITORY%%/*}"
-REPO_NAME="${GITHUB_REPOSITORY##*/}"
 REPOSITORY_URL="${SERVER_URL}/${GITHUB_REPOSITORY}"
 
-PR_JSON=$(github_api_get "${GH_API_HOST}/repos/${OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}")
-IS_MERGED=$(echo "$PR_JSON" | jq -r '.merged')
+PR_JSON=$(gh_get_required "${GH_API_URL}/repos/${GH_OWNER}/${GH_REPO}/pulls/${PR_NUMBER}")
+IS_MERGED=$(echo "$PR_JSON" | jq -r '.merged // false')
 if [ "$IS_MERGED" != "true" ]; then
   echo "::error::PR ${PR_NUMBER} is not merged; merged PR evidence is only created for merged PRs" >&2
   exit 1
@@ -44,18 +44,20 @@ MERGED_BY=$(echo "$PR_JSON" | jq -r '.merged_by.login // ""')
 # Prefer the merge commit's first parent as the target-branch base, so the
 # compare below reflects exactly what this merge introduced onto the target.
 if [ -n "$MERGE_COMMIT_SHA" ] && [ "$MERGE_COMMIT_SHA" != "null" ]; then
-  MERGE_COMMIT_JSON=$(github_api_get "${GH_API_HOST}/repos/${OWNER}/${REPO_NAME}/commits/${MERGE_COMMIT_SHA}")
+  MERGE_COMMIT_JSON=$(gh_get_required "${GH_API_URL}/repos/${GH_OWNER}/${GH_REPO}/commits/${MERGE_COMMIT_SHA}")
   MERGE_PARENT_SHA=$(echo "$MERGE_COMMIT_JSON" | jq -r '.parents[0].sha // ""')
   if [ -n "$MERGE_PARENT_SHA" ] && [ "$MERGE_PARENT_SHA" != "null" ]; then
     TARGET_BASE_SHA="$MERGE_PARENT_SHA"
   fi
 fi
 
-COLLECTED_AT=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
-WORKFLOW_RUN_URL="${SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID:-}"
+COLLECTED_AT=$(rfc3339_now)
+WORKFLOW_RUN_URL=$(workflow_run_url)
 
-REVIEWS=$(github_api_get \
-  "${GH_API_HOST}/repos/${OWNER}/${REPO_NAME}/pulls/${PR_NUMBER}/reviews")
+# Reviews are paginated (Link header), like the PR commits below: a PR with more
+# than one page of reviews must not silently truncate the approver list.
+REVIEWS=$(gh_get_paginated_array \
+  "${GH_API_URL}/repos/${GH_OWNER}/${GH_REPO}/pulls/${PR_NUMBER}/reviews?per_page=100&page=1")
 APPROVERS=$(echo "$REVIEWS" | jq --arg head_sha "$HEAD_SHA" '
   [ .[] | select(.state == "APPROVED") ]
   | group_by(.user.login)
@@ -73,9 +75,9 @@ APPROVERS=$(echo "$REVIEWS" | jq --arg head_sha "$HEAD_SHA" '
 ')
 
 COMMITS_ON_TARGET_BRANCH=$(bash "${SCRIPT_DIR}/lib/compare-commits.sh" \
-  "$GH_API_HOST" \
-  "$OWNER" \
-  "$REPO_NAME" \
+  "$GH_API_URL" \
+  "$GH_OWNER" \
+  "$GH_REPO" \
   "$TARGET_BASE_SHA" \
   "$MERGE_COMMIT_SHA")
 
@@ -89,14 +91,14 @@ fi
 
 CODE_COMMITTERS=$(bash "${SCRIPT_DIR}/lib/get-pr-commits.sh" \
   committers \
-  "$GH_API_HOST" \
-  "$OWNER" \
-  "$REPO_NAME" \
+  "$GH_API_URL" \
+  "$GH_OWNER" \
+  "$GH_REPO" \
   "$PR_NUMBER")
 
 jq -n \
-  --arg owner "$OWNER" \
-  --arg repo "$REPO_NAME" \
+  --arg owner "$GH_OWNER" \
+  --arg repo "$GH_REPO" \
   --arg pr_number "$PR_NUMBER" \
   --arg head_sha "$HEAD_SHA" \
   --arg head_ref "$HEAD_REF" \

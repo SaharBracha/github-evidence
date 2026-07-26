@@ -5,14 +5,25 @@
 #
 # Required env: EVIDENCE_TYPE, RAW_SNAPSHOT_FILE.
 # Optional env: PREDICATE_TYPE (default per mode), PREDICATE_OUT, SUBJECT_OUT,
-#   and for branch-protection: COLLECTOR_VERSION, GH_API_HOST, WORKFLOW_RUN_URL,
+#   and for branch-protection: COLLECTOR_VERSION, GITHUB_API_URL, WORKFLOW_RUN_URL,
 #   GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID, INCLUDE_RAW_SNAPSHOT.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=./lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
 : "${EVIDENCE_TYPE:?EVIDENCE_TYPE must be set}"
 : "${RAW_SNAPSHOT_FILE:?RAW_SNAPSHOT_FILE must be set}"
 PREDICATE_OUT="${PREDICATE_OUT:-predicate.json}"
 SUBJECT_OUT="${SUBJECT_OUT:-subject.json}"
+
+# Guard against a missing/empty/null snapshot up front: --slurpfile would happily
+# bind $raw[0] to null and emit an all-null predicate instead of failing.
+if ! jq -e 'if . == null then false else true end' "$RAW_SNAPSHOT_FILE" >/dev/null 2>&1; then
+  echo "::error::RAW_SNAPSHOT_FILE ${RAW_SNAPSHOT_FILE} is missing, empty, or not valid JSON" >&2
+  exit 1
+fi
 
 case "$EVIDENCE_TYPE" in
   pull-request-merge)
@@ -59,19 +70,16 @@ case "$EVIDENCE_TYPE" in
   branch-protection)
     PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/branch-protection/v1}"
     COLLECTOR_VERSION="${COLLECTOR_VERSION:-git-evidence}"
-    GH_API_HOST="${GH_API_HOST:-https://api.github.com}"
+    API_HOST="${GITHUB_API_URL:-https://api.github.com}"
     SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
-    if [ -z "${WORKFLOW_RUN_URL:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
-      WORKFLOW_RUN_URL="${SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID:-}"
-    fi
-    WORKFLOW_RUN_URL="${WORKFLOW_RUN_URL:-}"
+    WORKFLOW_RUN_URL="${WORKFLOW_RUN_URL:-$(workflow_run_url)}"
     INCLUDE_RAW_SNAPSHOT="${INCLUDE_RAW_SNAPSHOT:-true}"
     TOKEN_SCOPE_NOTE="collected with the workflow GITHUB_TOKEN; admin-only fields may be 'unavailable'"
 
     jq -n \
       --arg predicate_type "$PREDICATE_TYPE" \
       --arg collector_version "$COLLECTOR_VERSION" \
-      --arg github_api_host "$GH_API_HOST" \
+      --arg github_api_host "$API_HOST" \
       --arg server_url "$SERVER_URL" \
       --arg workflow_run_url "$WORKFLOW_RUN_URL" \
       --arg token_scope_note "$TOKEN_SCOPE_NOTE" \

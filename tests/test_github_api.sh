@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Unit tests for scripts/github-api.sh: redaction, section normalization, and
-# pagination (bare-array, total_count-wrapped, and partial-failure) behavior.
+# Unit tests for scripts/lib/github-api.sh: redaction, section normalization,
+# and pagination (bare-array, total_count-wrapped, and partial-failure) behavior.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -8,8 +8,8 @@ REPO_ROOT="$(cd -- "${TESTS_DIR}/.." &>/dev/null && pwd)"
 
 # shellcheck source=./lib/test_helpers.sh
 source "${TESTS_DIR}/lib/test_helpers.sh"
-# shellcheck source=../scripts/lib/github-api-settings.sh
-source "${REPO_ROOT}/scripts/lib/github-api-settings.sh"
+# shellcheck source=../scripts/lib/github-api.sh
+source "${REPO_ROOT}/scripts/lib/github-api.sh"
 
 export PATH="${TESTS_DIR}/lib:${PATH}"
 export GITHUB_TOKEN="test-token"

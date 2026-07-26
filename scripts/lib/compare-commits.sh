@@ -2,7 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/github-api-pr.sh"
+# shellcheck source=./github-api.sh
+source "${SCRIPT_DIR}/github-api.sh"
 
 github_compare_commit_shas() {
   local gh_api_host="$1"
@@ -22,7 +23,7 @@ github_compare_commit_shas() {
   fi
 
   local diff_response
-  diff_response=$(github_api_get \
+  diff_response=$(gh_get_required \
     "${gh_api_host}/repos/${owner}/${repo}/compare/${previous_sha}...${current_sha}")
 
   # Strip unescaped control characters (U+0000-U+001F) that jq cannot parse

@@ -9,7 +9,7 @@ REPO_ROOT="$(cd -- "${TESTS_DIR}/.." &>/dev/null && pwd)"
 source "${TESTS_DIR}/lib/test_helpers.sh"
 
 export PATH="${TESTS_DIR}/lib:${PATH}"
-export GH_TOKEN="test-token"
+export GITHUB_TOKEN="test-token"
 export GITHUB_REPOSITORY="acme/widget"
 export GITHUB_SERVER_URL="https://github.com"
 export GITHUB_RUN_ID="999"
@@ -54,9 +54,22 @@ test_unmerged_pr_fails() {
   assert_equal "1" "$rc" "an unmerged PR must fail the collector"
 }
 
+test_approvers_span_multiple_review_pages() {
+  # Reviews are Link-paginated: alice approves on page 1, carol on page 2. Both
+  # must appear, proving the collector follows rel="next" instead of truncating
+  # the approver list at the first page.
+  local out approvers
+  out="$(MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-reviews-paginated.json" collect_pr_merge)" || return 1
+  approvers="$(printf '%s' "$out" | jq -c '.approvers')"
+  assert_equal "2" "$(printf '%s' "$approvers" | jq 'length')" "approvers from both review pages are collected" || return 1
+  assert_equal "true" "$(printf '%s' "$approvers" | jq '[.[].login] | contains(["alice"])')" "page-1 approver alice present" || return 1
+  assert_equal "true" "$(printf '%s' "$approvers" | jq '[.[].login] | contains(["carol"])')" "page-2 approver carol present"
+}
+
 run_test test_collects_merged_pr_fields
 run_test test_approvers_are_deduped_latest_per_login
 run_test test_commits_and_committers
 run_test test_unmerged_pr_fails
+run_test test_approvers_span_multiple_review_pages
 
 report_results
