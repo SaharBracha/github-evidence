@@ -2,8 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=./github-api.sh
-source "${SCRIPT_DIR}/github-api.sh"
+# shellcheck source=../lib/github-api.sh
+source "${SCRIPT_DIR}/../lib/github-api.sh"
 
 github_get_pr_commits_json() {
   local api_url="$1"

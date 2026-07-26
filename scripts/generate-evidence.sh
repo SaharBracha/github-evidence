@@ -44,8 +44,8 @@ generate() {
   echo "::group::${etype} evidence"
 
   case "$etype" in
-    pull-request-merge) "${SCRIPT_DIR}/collect-pr-merge.sh" > raw-snapshot.json ;;
-    branch-protection)  "${SCRIPT_DIR}/collect-settings-snapshot.sh" > raw-snapshot.json ;;
+    pull-request-merge) "${SCRIPT_DIR}/pull-request-merge/collect-pr-merge.sh" > raw-snapshot.json ;;
+    branch-protection)  "${SCRIPT_DIR}/branch-protection/collect-settings-snapshot.sh" > raw-snapshot.json ;;
   esac
 
   EVIDENCE_TYPE="$etype" RAW_SNAPSHOT_FILE=raw-snapshot.json \

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for scripts/collect-branch-protection.sh against fixture-driven mock responses.
+# Tests for scripts/branch-protection/collect-branch-protection.sh against fixture-driven mock responses.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -14,7 +14,7 @@ export GH_OWNER="acme"
 export GH_REPO="widget"
 
 collect_branch_protection() {
-  MOCK_CURL_FIXTURE="$1" "${REPO_ROOT}/scripts/collect-branch-protection.sh"
+  MOCK_CURL_FIXTURE="$1" "${REPO_ROOT}/scripts/branch-protection/collect-branch-protection.sh"
 }
 
 test_collects_full_protection_rules_and_rulesets() {

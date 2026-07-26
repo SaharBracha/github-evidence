@@ -12,10 +12,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api.sh
-source "${SCRIPT_DIR}/lib/github-api.sh"
-# shellcheck source=./lib/common.sh
-source "${SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=../lib/github-api.sh
+source "${SCRIPT_DIR}/../lib/github-api.sh"
+# shellcheck source=../lib/common.sh
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 : "${GITHUB_TOKEN:?GITHUB_TOKEN must be set}"
 : "${PR_NUMBER:?PR_NUMBER must be set}"
@@ -73,7 +73,7 @@ APPROVERS=$(echo "$REVIEWS" | jq --arg head_sha "$HEAD_SHA" '
     )
 ')
 
-COMMITS_ON_TARGET_BRANCH=$(bash "${SCRIPT_DIR}/lib/compare-commits.sh" \
+COMMITS_ON_TARGET_BRANCH=$(bash "${SCRIPT_DIR}/compare-commits.sh" \
   "$GH_API_URL" \
   "$GH_OWNER" \
   "$GH_REPO" \
@@ -88,7 +88,7 @@ if [ "$(echo "$COMMITS_ON_TARGET_BRANCH" | jq 'length')" -eq 0 ] \
   COMMITS_ON_TARGET_BRANCH=$(jq -n --arg sha "$MERGE_COMMIT_SHA" '[$sha]')
 fi
 
-CODE_COMMITTERS=$(bash "${SCRIPT_DIR}/lib/get-pr-commits.sh" \
+CODE_COMMITTERS=$(bash "${SCRIPT_DIR}/get-pr-commits.sh" \
   committers \
   "$GH_API_URL" \
   "$GH_OWNER" \

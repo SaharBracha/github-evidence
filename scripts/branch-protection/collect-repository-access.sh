@@ -8,8 +8,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api.sh
-source "${SCRIPT_DIR}/lib/github-api.sh"
+# shellcheck source=../lib/github-api.sh
+source "${SCRIPT_DIR}/../lib/github-api.sh"
 
 : "${GH_OWNER:?GH_OWNER must be set}"
 : "${GH_REPO:?GH_REPO must be set}"
@@ -49,7 +49,7 @@ actions_selected_actions_section="$(gh_section_get "${repo_path}/actions/permiss
 actions_variables_section="$(gh_section_get_paginated "${repo_path}/actions/variables")"
 actions_secrets_section="$(gh_section_get_paginated "${repo_path}/actions/secrets")"
 custom_properties_section="$(gh_section_get "${repo_path}/properties/values")"
-private_vulnerability_reporting_section="$(gh_section_get "${repo_path}/private-vulnerability-reporting")"
+private_vulnerability_reporting_section="$(gh_section_get "${repo_path}/private-vulnerability-reporting" "" "not_supported")"
 
 jq -n \
   --argjson repository "$repository_section" \

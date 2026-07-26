@@ -72,9 +72,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Collect this repository's own settings snapshot
+      - name: Collect and verify this repository's own settings snapshot
         run: |
           set -euo pipefail
-          bash scripts/collect-settings-snapshot.sh > snapshot.json
-          jq -e '.schema_version and .repository.full_name and .sections.branch_protection' snapshot.json >/dev/null
-          echo "Snapshot collected and validated."
+          bash scripts/branch-protection/collect-settings-snapshot.sh > snapshot.json
+          # Print the collected snapshot so the run shows exactly what was
+          # collected (which sections are `collected` vs `unavailable`), then
+          # verify it is a genuine, well-formed snapshot of this repository.
+          jq . snapshot.json
+          bash tests/assert-snapshot.sh < snapshot.json

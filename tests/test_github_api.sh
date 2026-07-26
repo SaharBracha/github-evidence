@@ -40,21 +40,40 @@ test_section_from_result_not_found_is_unavailable() {
   envelope='{"status":404,"ok":false,"body":{"message":"Not Found"}}'
   section="$(gh_section_from_result "$envelope")"
   assert_equal "unavailable" "$(printf '%s' "$section" | jq -r '.status')" "404 must be reported as unavailable, not empty data" || return 1
-  assert_equal "Not Found" "$(printf '%s' "$section" | jq -r '.message')" "message should surface GitHub's error text"
+  assert_equal "Not Found" "$(printf '%s' "$section" | jq -r '.message')" "message should surface GitHub's error text" || return 1
+  assert_equal "not_found" "$(printf '%s' "$section" | jq -r '.reason')" "404 must carry reason not_found"
+}
+
+test_section_from_result_not_found_reason_override() {
+  local envelope section
+  envelope='{"status":404,"ok":false,"body":{"message":"Not Found"}}'
+  section="$(gh_section_from_result "$envelope" "not_supported")"
+  assert_equal "unavailable" "$(printf '%s' "$section" | jq -r '.status')" "overridden 404 is still unavailable" || return 1
+  assert_equal "not_supported" "$(printf '%s' "$section" | jq -r '.reason')" "override must set reason to not_supported"
 }
 
 test_section_from_result_forbidden_is_unavailable() {
   local envelope section
   envelope='{"status":403,"ok":false,"body":{"message":"Resource not accessible by integration"}}'
   section="$(gh_section_from_result "$envelope")"
-  assert_equal "unavailable" "$(printf '%s' "$section" | jq -r '.status')" "403 must be reported as unavailable"
+  assert_equal "unavailable" "$(printf '%s' "$section" | jq -r '.status')" "403 must be reported as unavailable" || return 1
+  assert_equal "permission_denied" "$(printf '%s' "$section" | jq -r '.reason')" "403 must carry reason permission_denied"
+}
+
+test_section_from_result_unauthorized_is_unavailable() {
+  local envelope section
+  envelope='{"status":401,"ok":false,"body":{"message":"A JSON web token could not be decoded"}}'
+  section="$(gh_section_from_result "$envelope")"
+  assert_equal "unavailable" "$(printf '%s' "$section" | jq -r '.status')" "401 must be reported as unavailable" || return 1
+  assert_equal "permission_denied" "$(printf '%s' "$section" | jq -r '.reason')" "401 must carry reason permission_denied"
 }
 
 test_section_from_result_server_error_is_error() {
   local envelope section
   envelope='{"status":500,"ok":false,"body":{"message":"Internal Server Error"}}'
   section="$(gh_section_from_result "$envelope")"
-  assert_equal "error" "$(printf '%s' "$section" | jq -r '.status')" "500 must be reported as error, distinct from unavailable"
+  assert_equal "error" "$(printf '%s' "$section" | jq -r '.status')" "500 must be reported as error, distinct from unavailable" || return 1
+  assert_equal "error" "$(printf '%s' "$section" | jq -r '.reason')" "500 must carry reason error"
 }
 
 test_pagination_accumulates_bare_array_across_pages() {
@@ -88,7 +107,9 @@ test_pagination_partial_failure_keeps_first_page_data() {
 run_test test_redact_strips_nested_secret_like_keys
 run_test test_section_from_result_success
 run_test test_section_from_result_not_found_is_unavailable
+run_test test_section_from_result_not_found_reason_override
 run_test test_section_from_result_forbidden_is_unavailable
+run_test test_section_from_result_unauthorized_is_unavailable
 run_test test_section_from_result_server_error_is_error
 run_test test_pagination_accumulates_bare_array_across_pages
 run_test test_pagination_follows_total_count_for_wrapped_endpoints
