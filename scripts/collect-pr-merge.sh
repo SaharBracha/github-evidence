@@ -8,8 +8,7 @@
 # collect is passed as PR_NUMBER.
 #
 # Required env: GITHUB_TOKEN, PR_NUMBER, GITHUB_REPOSITORY.
-# Optional env: GITHUB_API_URL (default https://api.github.com),
-#               GITHUB_SERVER_URL (default https://github.com), GITHUB_RUN_ID.
+# Optional env: GITHUB_SERVER_URL (default https://github.com), GITHUB_RUN_ID.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -22,7 +21,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 : "${PR_NUMBER:?PR_NUMBER must be set}"
 
 resolve_owner_repo
-GH_API_URL="${GITHUB_API_URL:-https://api.github.com}"
+GH_API_URL="https://api.github.com"
 SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
 REPOSITORY_URL="${SERVER_URL}/${GITHUB_REPOSITORY}"
 

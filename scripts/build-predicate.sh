@@ -5,8 +5,8 @@
 #
 # Required env: EVIDENCE_TYPE, RAW_SNAPSHOT_FILE.
 # Optional env: PREDICATE_TYPE (default per mode), PREDICATE_OUT, SUBJECT_OUT,
-#   and for branch-protection: COLLECTOR_VERSION, GITHUB_API_URL, WORKFLOW_RUN_URL,
-#   GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID, INCLUDE_RAW_SNAPSHOT.
+#   and for branch-protection: COLLECTOR_VERSION, WORKFLOW_RUN_URL,
+#   GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -70,10 +70,9 @@ case "$EVIDENCE_TYPE" in
   branch-protection)
     PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/branch-protection/v1}"
     COLLECTOR_VERSION="${COLLECTOR_VERSION:-git-evidence}"
-    API_HOST="${GITHUB_API_URL:-https://api.github.com}"
+    API_HOST="https://api.github.com"
     SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
     WORKFLOW_RUN_URL="${WORKFLOW_RUN_URL:-$(workflow_run_url)}"
-    INCLUDE_RAW_SNAPSHOT="${INCLUDE_RAW_SNAPSHOT:-true}"
     TOKEN_SCOPE_NOTE="collected with the workflow GITHUB_TOKEN; admin-only fields may be 'unavailable'"
 
     jq -n \
@@ -83,7 +82,6 @@ case "$EVIDENCE_TYPE" in
       --arg server_url "$SERVER_URL" \
       --arg workflow_run_url "$WORKFLOW_RUN_URL" \
       --arg token_scope_note "$TOKEN_SCOPE_NOTE" \
-      --argjson include_raw "$( [ "$INCLUDE_RAW_SNAPSHOT" = "true" ] && echo true || echo false )" \
       --slurpfile snap "$RAW_SNAPSHOT_FILE" \
       '
       $snap[0] as $s
@@ -187,7 +185,7 @@ case "$EVIDENCE_TYPE" in
             )
           )
         }
-      | if $include_raw then . + { raw_snapshot: $s } else . end
+      | . + { raw_snapshot: $s }
       ' > "$PREDICATE_OUT"
 
     # For branch protection the subject artifact IS the full snapshot document.

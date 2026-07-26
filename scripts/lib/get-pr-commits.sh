@@ -6,23 +6,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/github-api.sh"
 
 github_get_pr_commits_json() {
-  local gh_api_host="$1"
+  local api_url="$1"
   local owner="$2"
   local repo="$3"
   local pr_number="$4"
 
   gh_get_paginated_array \
-    "${gh_api_host}/repos/${owner}/${repo}/pulls/${pr_number}/commits?per_page=100&page=1"
+    "${api_url}/repos/${owner}/${repo}/pulls/${pr_number}/commits?per_page=100&page=1"
 }
 
 github_get_pr_code_committers_json() {
-  local gh_api_host="$1"
+  local api_url="$1"
   local owner="$2"
   local repo="$3"
   local pr_number="$4"
   local commits_json
 
-  commits_json=$(github_get_pr_commits_json "$gh_api_host" "$owner" "$repo" "$pr_number")
+  commits_json=$(github_get_pr_commits_json "$api_url" "$owner" "$repo" "$pr_number")
 
   echo "$commits_json" | jq '
     [
@@ -45,7 +45,7 @@ github_get_pr_code_committers_json() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   if [[ "$#" -ne 5 ]]; then
-    echo "usage: $0 <commits|committers> <gh-api-host> <owner> <repo> <pr-number>" >&2
+    echo "usage: $0 <commits|committers> <api-url> <owner> <repo> <pr-number>" >&2
     exit 2
   fi
 
@@ -60,7 +60,7 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
       github_get_pr_code_committers_json "$@"
       ;;
     *)
-      echo "usage: $0 <commits|committers> <gh-api-host> <owner> <repo> <pr-number>" >&2
+      echo "usage: $0 <commits|committers> <api-url> <owner> <repo> <pr-number>" >&2
       exit 2
       ;;
   esac

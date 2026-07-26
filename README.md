@@ -93,12 +93,13 @@ PRs produce nothing. A runnable copy lives in
 | `jf_project` | yes | — | JFrog project key. |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
 | `evidence_key_alias` | yes | — | Signing key alias registered in the JFrog platform. |
-| `github_token` | no | `${{ github.token }}` | Token used to read repository data. |
-| `gh_api_host` | no | `https://api.github.com` | GitHub REST API base URL (set for GHES). |
-| `upload_subject` | no | `true` | Upload the subject artifact before attaching evidence. |
-| `include_raw_snapshot` | no | `true` | Embed the full collector snapshot in the branch-protection predicate. |
 | `collect_branch_protection` | no | `true` | Generate branch-protection evidence. Set to `false` to skip it. |
 | `collect_pull_request_merge` | no | `true` | Generate merged-pull-request evidence. Set to `false` to skip it. |
+
+GitHub data is read from `api.github.com` with the workflow's built-in
+`GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
+Branch-protection fields the token isn't allowed to read are recorded as
+`unavailable` rather than failing the run.
 
 The merged-PR number is read automatically from the triggering `pull_request`
 event — there is no `pr_number` input. Each `collect_*` input is enabled only by
