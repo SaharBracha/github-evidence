@@ -8,8 +8,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api.sh
-source "${SCRIPT_DIR}/lib/github-api.sh"
+# shellcheck source=../lib/github-api.sh
+source "${SCRIPT_DIR}/../lib/github-api.sh"
 
 : "${GH_OWNER:?GH_OWNER must be set}"
 : "${GH_REPO:?GH_REPO must be set}"

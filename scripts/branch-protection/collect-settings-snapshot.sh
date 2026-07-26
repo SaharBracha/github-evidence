@@ -6,10 +6,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=./lib/github-api.sh
-source "${SCRIPT_DIR}/lib/github-api.sh"
-# shellcheck source=./lib/common.sh
-source "${SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=../lib/github-api.sh
+source "${SCRIPT_DIR}/../lib/github-api.sh"
+# shellcheck source=../lib/common.sh
+source "${SCRIPT_DIR}/../lib/common.sh"
 
 SCHEMA_VERSION="1.0.0"
 

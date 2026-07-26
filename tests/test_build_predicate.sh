@@ -21,7 +21,7 @@ test_pull_request_merge_predicate_and_subject() {
   GITHUB_TOKEN="t" GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
     GITHUB_RUN_ID="5" PR_NUMBER="7" \
     MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-success.json" \
-    "${REPO_ROOT}/scripts/collect-pr-merge.sh" > "$raw" || return 1
+    "${REPO_ROOT}/scripts/pull-request-merge/collect-pr-merge.sh" > "$raw" || return 1
 
   EVIDENCE_TYPE=pull-request-merge RAW_SNAPSHOT_FILE="$raw" PREDICATE_OUT="$pred" SUBJECT_OUT="$subj" \
     "${REPO_ROOT}/scripts/build-predicate.sh" || return 1
@@ -43,7 +43,7 @@ test_branch_protection_predicate_and_subject() {
 
   GITHUB_TOKEN="t" GITHUB_REPOSITORY="acme/widget" \
     MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/full-success.json" \
-    env -u GH_OWNER -u GH_REPO "${REPO_ROOT}/scripts/collect-settings-snapshot.sh" > "$raw" || return 1
+    env -u GH_OWNER -u GH_REPO "${REPO_ROOT}/scripts/branch-protection/collect-settings-snapshot.sh" > "$raw" || return 1
 
   EVIDENCE_TYPE=branch-protection RAW_SNAPSHOT_FILE="$raw" \
     GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \

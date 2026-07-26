@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for scripts/collect-pr-merge.sh against fixture-driven mock responses.
+# Tests for scripts/pull-request-merge/collect-pr-merge.sh against fixture-driven mock responses.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -17,7 +17,7 @@ export PR_NUMBER="7"
 export MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-success.json"
 
 collect_pr_merge() {
-  "${REPO_ROOT}/scripts/collect-pr-merge.sh"
+  "${REPO_ROOT}/scripts/pull-request-merge/collect-pr-merge.sh"
 }
 
 test_collects_merged_pr_fields() {

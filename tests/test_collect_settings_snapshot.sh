@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end test for scripts/collect-settings-snapshot.sh: runs the real
+# End-to-end test for scripts/branch-protection/collect-settings-snapshot.sh: runs the real
 # orchestrator (which shells out to the three collector scripts) against the
 # mock GitHub API and checks the printed document is a single valid JSON
 # document (no log markers) with the expected schema and computed correlation.
@@ -17,7 +17,7 @@ export GITHUB_REPOSITORY="acme/widget"
 unset GH_OWNER GH_REPO
 
 snapshot() {
-  MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/full-success.json" "${REPO_ROOT}/scripts/collect-settings-snapshot.sh"
+  MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/full-success.json" "${REPO_ROOT}/scripts/branch-protection/collect-settings-snapshot.sh"
 }
 
 test_prints_one_valid_document_without_markers() {

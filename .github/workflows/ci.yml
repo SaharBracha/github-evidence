@@ -75,6 +75,6 @@ jobs:
       - name: Collect this repository's own settings snapshot
         run: |
           set -euo pipefail
-          bash scripts/collect-settings-snapshot.sh > snapshot.json
+          bash scripts/branch-protection/collect-settings-snapshot.sh > snapshot.json
           jq -e '.schema_version and .repository.full_name and .sections.branch_protection' snapshot.json >/dev/null
           echo "Snapshot collected and validated."
