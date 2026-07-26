@@ -79,9 +79,7 @@ runs:
       shell: bash
       env:
         AP: ${{ github.action_path }}
-        GH_TOKEN: ${{ inputs.github_token }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
-        GH_API_HOST: ${{ inputs.gh_api_host }}
         GITHUB_API_URL: ${{ inputs.gh_api_host }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
@@ -95,66 +93,4 @@ runs:
         EVIDENCE_KEY_ALIAS: ${{ inputs.evidence_key_alias }}
       run: |
         set -euo pipefail
-
-        owner="${GITHUB_REPOSITORY%%/*}"
-        # Short form of the merge commit SHA (first 8 chars) keeps subject paths
-        # readable; full-length collisions aren't a concern within one repo.
-        change_sha="${MERGE_COMMIT_SHA:0:8}"
-
-        # Collect one evidence type, shape its predicate + subject, render a
-        # human-readable markdown report, then sign and upload it. Runtime
-        # working files are reused between calls, so each call signs and uploads
-        # before the next overwrites them. Both evidence types share one subject
-        # naming structure — <owner>-<type>-<short-merge-commit-sha> — so they
-        # stay aligned and are keyed to the same change.
-        generate() {
-          local etype="$1" predicate_type="$2"
-          local subject_repo_path="git-evidence/${etype}/${owner}-${etype}-${change_sha}.json"
-          echo "::group::${etype} evidence"
-
-          case "$etype" in
-            pull-request-merge) "$AP/scripts/collect-pr-merge.sh" > raw-snapshot.json ;;
-            branch-protection)  "$AP/scripts/collect-settings-snapshot.sh" > raw-snapshot.json ;;
-          esac
-
-          EVIDENCE_TYPE="$etype" RAW_SNAPSHOT_FILE=raw-snapshot.json \
-            PREDICATE_TYPE="$predicate_type" \
-            "$AP/scripts/build-predicate.sh"
-
-          EVIDENCE_TYPE="$etype" PREDICATE_FILE=predicate.json \
-            SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \
-            "$AP/scripts/build-markdown.sh"
-
-          SUBJECT_FILE=subject.json PREDICATE_FILE=predicate.json \
-            SUBJECT_REPO_PATH="$subject_repo_path" PREDICATE_TYPE="$predicate_type" \
-            MARKDOWN_FILE=report.md \
-            "$AP/scripts/sign-and-upload.sh"
-
-          echo "::endgroup::"
-        }
-
-        # This action is intended to run on a merged pull request (gate the
-        # calling job on github.event.pull_request.merged == true). Both evidence
-        # types are recorded for that merge by default; each can be opted out via
-        # its collect_* input. Only an exact "true" enables a type — any other
-        # value (false, typo, empty) is treated as opt-out.
-        collect_bp="${COLLECT_BRANCH_PROTECTION:-true}"
-        collect_pr="${COLLECT_PULL_REQUEST_MERGE:-true}"
-
-        if [ "$collect_bp" != "true" ] && [ "$collect_pr" != "true" ]; then
-          echo "::warning::Both evidence types are disabled (collect_branch_protection=false, collect_pull_request_merge=false); nothing to generate."
-        fi
-
-        if [ "$collect_bp" = "true" ]; then
-          generate "branch-protection" \
-            "https://jfrog.com/evidence/branch-protection/v1"
-        else
-          echo "Skipping branch-protection evidence (collect_branch_protection=false)."
-        fi
-
-        if [ "$collect_pr" = "true" ]; then
-          generate "pull-request-merge" \
-            "https://jfrog.com/evidence/pull-request-merge/v1"
-        else
-          echo "Skipping pull-request-merge evidence (collect_pull_request_merge=false)."
-        fi
+        bash "$AP/scripts/generate-evidence.sh"
