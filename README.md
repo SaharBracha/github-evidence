@@ -2,7 +2,7 @@
 
 A single GitHub Action that collects **Git evidence** and attaches it to
 Artifactory as **signed JFrog evidence**. It runs when a pull request is
-**merged** and, without you choosing an evidence type, produces both:
+**merged** and, by default, produces both:
 
 - **Branch protection** — a normalized snapshot of the repository's protected
   branches, rulesets, and CODEOWNERS enforcement at merge time.
@@ -10,6 +10,9 @@ Artifactory as **signed JFrog evidence**. It runs when a pull request is
 - **Merged pull request** — who approved the PR, what commits it put on the
   target branch, and who authored them.
   ([schema](predicates/pull-request-merge.json))
+
+You can opt out of either one with the `collect_branch_protection` and
+`collect_pull_request_merge` inputs (both default `true`).
 
 The action installs the JFrog CLI itself, so you only supply your JFrog
 credentials and signing key.
@@ -45,7 +48,8 @@ jobs:
 
 The `closed` trigger fires on every PR close, but the `if` guard limits the job
 to merges only — so each merged PR produces both branch-protection and merged-PR
-evidence, and closed-unmerged PRs produce nothing. A runnable copy lives in
+evidence (unless disabled via the `collect_*` inputs below), and closed-unmerged
+PRs produce nothing. A runnable copy lives in
 [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
 ## Inputs
@@ -61,6 +65,8 @@ evidence, and closed-unmerged PRs produce nothing. A runnable copy lives in
 | `gh_api_host` | no | `https://api.github.com` | GitHub REST API base URL (set for GHES). |
 | `upload_subject` | no | `true` | Upload the subject artifact before attaching evidence. |
 | `include_raw_snapshot` | no | `true` | Embed the full collector snapshot in the branch-protection predicate. |
+| `collect_branch_protection` | no | `true` | Generate branch-protection evidence. Set to `false` to skip it. |
+| `collect_pull_request_merge` | no | `true` | Generate merged-pull-request evidence. Set to `false` to skip it. |
 
 The merged-PR number is read automatically from the triggering
 `pull_request` event — there is no `pr_number` input.
