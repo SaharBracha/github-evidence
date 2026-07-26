@@ -64,7 +64,6 @@ permissions:
   id-token: write
 jobs:
   git-evidence:
-    # GitHub has no "merged" trigger; listen on closed PRs and gate on merged.
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
