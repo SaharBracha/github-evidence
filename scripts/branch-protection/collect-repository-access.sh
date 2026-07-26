@@ -49,7 +49,7 @@ actions_selected_actions_section="$(gh_section_get "${repo_path}/actions/permiss
 actions_variables_section="$(gh_section_get_paginated "${repo_path}/actions/variables")"
 actions_secrets_section="$(gh_section_get_paginated "${repo_path}/actions/secrets")"
 custom_properties_section="$(gh_section_get "${repo_path}/properties/values")"
-private_vulnerability_reporting_section="$(gh_section_get "${repo_path}/private-vulnerability-reporting")"
+private_vulnerability_reporting_section="$(gh_section_get "${repo_path}/private-vulnerability-reporting" "" "not_supported")"
 
 jq -n \
   --argjson repository "$repository_section" \

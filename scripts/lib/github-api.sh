@@ -297,12 +297,22 @@ gh_api_error_message() {
 }
 
 # Normalize a gh_http_get/gh_api_get_paginated envelope into a section record:
-#   {status: "collected"|"unavailable"|"error", http_status, data?, message?}
+#   {status: "collected"|"unavailable"|"error", http_status, data?, message?, reason?}
 # 401/403/404/410 are reported as "unavailable" (token lacks access, or the
 # resource does not exist) rather than treated as empty data. Anything else
-# unsuccessful is "error".
+# unsuccessful is "error". Non-collected records carry a machine-readable
+# "reason":
+#   401/403 -> "permission_denied"
+#   404/410 -> "not_found" (or the caller's override, e.g. "not_supported" for an
+#              endpoint that simply does not exist on this GitHub instance)
+#   other   -> "error"
+#
+# The optional 2nd argument overrides the 404/410 reason. It lets a specific
+# endpoint distinguish "this GitHub instance does not offer this feature"
+# (not_supported) from "this resource was not found" (not_found).
 gh_section_from_result() {
   local result="$1"
+  local not_found_reason="${2:-not_found}"
   local status ok partial
   status="$(printf '%s' "$result" | jq -r '.status')"
   ok="$(printf '%s' "$result" | jq -r '.ok')"
@@ -328,25 +338,31 @@ gh_section_from_result() {
   local message
   message="$(gh_api_error_message "$result")"
   case "$status" in
-    401|403|404|410)
+    401|403)
       jq -n --argjson http_status "$status" --arg message "$message" \
-        '{status: "unavailable", http_status: $http_status, message: $message}'
+        '{status: "unavailable", http_status: $http_status, message: $message, reason: "permission_denied"}'
+      ;;
+    404|410)
+      jq -n --argjson http_status "$status" --arg message "$message" --arg reason "$not_found_reason" \
+        '{status: "unavailable", http_status: $http_status, message: $message, reason: $reason}'
       ;;
     *)
       jq -n --argjson http_status "$status" --arg message "$message" \
-        '{status: "error", http_status: $http_status, message: $message}'
+        '{status: "error", http_status: $http_status, message: $message, reason: "error"}'
       ;;
   esac
 }
 
 # Convenience: run gh_http_get then immediately normalize into a section record.
+# Optional 3rd arg overrides the 404/410 reason (e.g. "not_supported").
 gh_section_get() {
-  gh_section_from_result "$(gh_http_get "$1" "${2:-application/vnd.github+json}")"
+  gh_section_from_result "$(gh_http_get "$1" "${2:-application/vnd.github+json}")" "${3:-not_found}"
 }
 
 # Convenience: run gh_api_get_paginated then immediately normalize into a section record.
+# Optional 3rd arg overrides the 404/410 reason (e.g. "not_supported").
 gh_section_get_paginated() {
-  gh_section_from_result "$(gh_api_get_paginated "$1" "${2:-application/vnd.github+json}")"
+  gh_section_from_result "$(gh_api_get_paginated "$1" "${2:-application/vnd.github+json}")" "${3:-not_found}"
 }
 
 # ---------------------------------------------------------------------------
