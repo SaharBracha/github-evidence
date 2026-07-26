@@ -18,6 +18,17 @@ set -euo pipefail
 : "${PREDICATE_FILE:?PREDICATE_FILE must be set}"
 MARKDOWN_OUT="${MARKDOWN_OUT:-markdown.md}"
 
+# Shared jq helpers, defined once and prepended to both report filters:
+#   safe  strip the " < > characters the JFrog markdown viewer escapes, and
+#         escape pipe so collected values can't break out of a table cell.
+#   dash  render an em dash for empty/null instead of a blank cell.
+#   yn    boolean -> yes/no.
+MD_HELPERS='
+  def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
+  def dash: if . == null or . == "" then "—" else (. | safe) end;
+  def yn: if . then "yes" else "no" end;
+'
+
 case "$EVIDENCE_TYPE" in
   pull-request-merge)
     subject_json='{}'
@@ -25,9 +36,7 @@ case "$EVIDENCE_TYPE" in
       subject_json="$(< "$SUBJECT_FILE")"
     fi
 
-    jq -r --argjson subj "$subject_json" '
-      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
-      def dash: if . == null or . == "" then "—" else (. | safe) end;
+    jq -r --argjson subj "$subject_json" "$MD_HELPERS"'
       def repo_slug: ($subj.repo_url // "") | safe | (split("/") | if length >= 2 then .[-2:] | join("/") else (. | join("/")) end);
 
       "# Pull Request Merge Evidence Report\n"
@@ -65,10 +74,7 @@ case "$EVIDENCE_TYPE" in
     ;;
 
   branch-protection)
-    jq -r '
-      def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
-      def dash: if . == null or . == "" then "—" else (. | safe) end;
-      def yn: if . then "yes" else "no" end;
+    jq -r "$MD_HELPERS"'
       (.raw_snapshot.sections.branch_protection.rulesets // {}) as $rs_raw
       | "# Branch Protection Evidence Report\n"
       + "\n## Summary\n"

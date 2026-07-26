@@ -35,6 +35,26 @@ assert_true() {
   fi
 }
 
+assert_contains() {
+  local haystack="$1" needle="$2" message="${3:-output should contain substring}"
+  if [[ "$haystack" != *"$needle"* ]]; then
+    echo "  FAIL: $message" >&2
+    echo "    expected to contain: $needle" >&2
+    echo "    actual:              $haystack" >&2
+    return 1
+  fi
+}
+
+assert_not_contains() {
+  local haystack="$1" needle="$2" message="${3:-output should not contain substring}"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    echo "  FAIL: $message" >&2
+    echo "    expected to NOT contain: $needle" >&2
+    echo "    actual:                  $haystack" >&2
+    return 1
+  fi
+}
+
 assert_valid_json() {
   local value="$1" message="${2:-value should be valid JSON}"
   if ! printf '%s' "$value" | jq -e . >/dev/null 2>&1; then

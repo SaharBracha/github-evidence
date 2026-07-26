@@ -18,7 +18,7 @@ test_pull_request_merge_predicate_and_subject() {
   local raw pred subj
   raw="${WORK}/raw-pr.json"; pred="${WORK}/pred-pr.json"; subj="${WORK}/subj-pr.json"
 
-  GH_TOKEN="t" GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
+  GITHUB_TOKEN="t" GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
     GITHUB_RUN_ID="5" PR_NUMBER="7" \
     MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-success.json" \
     "${REPO_ROOT}/scripts/collect-pr-merge.sh" > "$raw" || return 1

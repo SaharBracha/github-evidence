@@ -1,21 +1,53 @@
 # JFrog Git Evidence
 
-A single GitHub Action that collects **Git evidence** and attaches it to
-Artifactory as **signed JFrog evidence**. It runs when a pull request is
-**merged** and, by default, produces both:
+A single GitHub Action that collects **Git evidence** from your repository and
+attaches it to Artifactory as **signed JFrog evidence**. It runs when a pull
+request is **merged**, giving you a tamper-evident, cryptographically signed
+record of how each change was reviewed and how your repository was governed at
+that moment.
+
+The action installs the JFrog CLI for you — you only supply your JFrog
+credentials and signing key.
+
+## What you get
+
+For every merged pull request, the action produces up to two signed evidence
+types and attaches them to your artifact in Artifactory:
 
 - **Branch protection** — a normalized snapshot of the repository's protected
-  branches, rulesets, and CODEOWNERS enforcement at merge time.
+  branches, rulesets, and CODEOWNERS enforcement at merge time. Proof of how the
+  repo was governed when the change landed.
   ([schema](predicates/branch-protection.json))
 - **Merged pull request** — who approved the PR, what commits it put on the
   target branch, and who authored them.
   ([schema](predicates/pull-request-merge.json))
 
-You can opt out of either one with the `collect_branch_protection` and
-`collect_pull_request_merge` inputs (both default `true`).
+Each evidence attachment includes:
 
-The action installs the JFrog CLI itself, so you only supply your JFrog
-credentials and signing key.
+- A **signed JSON predicate** conforming to a published schema — machine-readable
+  for automated policy checks and audits.
+- A **human-readable report** you can open directly in the JFrog evidence
+  **Content** tab.
+
+Everything is **read-only** against GitHub, and secret *values* are never
+fetched. You can opt out of either evidence type with the
+`collect_branch_protection` and `collect_pull_request_merge` inputs (both default
+`true`).
+
+## Prerequisites
+
+Before adding the workflow, set up the following in the JFrog platform:
+
+- A **JFrog project** (you'll reference its project key).
+- An **OIDC integration** under **Administration → OIDC**, with an identity
+  mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
+  access token is stored — the runner exchanges its GitHub OIDC token for JFrog
+  access at run time.
+- An **evidence signing key** (private PEM) and its **alias** registered in the
+  platform. The signing key is the only secret you store in GitHub.
+
+See [Required secrets and variables](#required-secrets-and-variables) for how to
+wire these into your repository.
 
 ## Quick start
 
@@ -56,7 +88,7 @@ PRs produce nothing. A runnable copy lives in
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://<host>/`). |
+| `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://&lt;host&gt;/`). |
 | `oidc_provider_name` | yes | — | Name of the OIDC integration in the JFrog platform; the runner exchanges its GitHub OIDC token for JFrog access (no stored token). |
 | `jf_project` | yes | — | JFrog project key. |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
@@ -68,8 +100,9 @@ PRs produce nothing. A runnable copy lives in
 | `collect_branch_protection` | no | `true` | Generate branch-protection evidence. Set to `false` to skip it. |
 | `collect_pull_request_merge` | no | `true` | Generate merged-pull-request evidence. Set to `false` to skip it. |
 
-The merged-PR number is read automatically from the triggering
-`pull_request` event — there is no `pr_number` input.
+The merged-PR number is read automatically from the triggering `pull_request`
+event — there is no `pr_number` input. Each `collect_*` input is enabled only by
+an exact `true`; any other value (`false`, a typo, or empty) is treated as opt-out.
 
 ## Required secrets and variables
 
@@ -86,12 +119,7 @@ secret is the signing key. Configure a matching OIDC integration in the JFrog
 platform under **Administration → OIDC**, with an identity mapping for this
 repository, and use its provider name as `JF_OIDC_PROVIDER`.
 
-## Versioning
-
-Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
-`@vX.Y.Z` for an immutable pin.
-
-## Predicates
+## What gets recorded
 
 Each evidence type ships a machine-readable JSON Schema (`.json`) describing its
 predicate. At merge time the action also generates a human-readable report from
@@ -101,17 +129,7 @@ the run's actual data and attaches it to the evidence (`jf evd create
 - Branch protection — [`branch-protection.json`](predicates/branch-protection.json)
 - Merged pull request — [`pull-request-merge.json`](predicates/pull-request-merge.json)
 
-## Publishing to the GitHub Marketplace
+## Versioning
 
-- Public repo, root `action.yml` with `branding`, a `LICENSE`, and a unique
-  action name (`JFrog Git Evidence`).
-- Create a GitHub Release with a semver tag and tick **"Publish this Action to
-  the GitHub Marketplace."**
-- Maintain a moving `v1` tag that customers reference; keep the examples on `@v1`.
-
-## Development
-
-```bash
-bash tests/run-tests.sh          # offline, fixture-driven test suites
-shellcheck --severity=warning scripts/*.sh scripts/lib/*.sh tests/*.sh tests/lib/curl
-```
+Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
+`@vX.Y.Z` for an immutable pin.

@@ -8,6 +8,9 @@
 # Optional env: UPLOAD_SUBJECT (default "true"),
 #               MARKDOWN_FILE (human-readable report attached via --markdown).
 set -euo pipefail
+# This script writes the private signing key to disk. Force xtrace off so an
+# inherited `set -x` or RUNNER_DEBUG=1 can never echo the PEM into the run log.
+set +x
 
 : "${SUBJECT_FILE:?SUBJECT_FILE must be set}"
 : "${SUBJECT_REPO_PATH:?SUBJECT_REPO_PATH must be set}"
@@ -21,10 +24,10 @@ UPLOAD_SUBJECT="${UPLOAD_SUBJECT:-true}"
 jf rt ping
 
 if [ "$UPLOAD_SUBJECT" = "true" ]; then
-  echo "Uploading subject ${SUBJECT_FILE} to ${SUBJECT_REPO_PATH}"
+  echo "Uploading subject ${SUBJECT_FILE} to ${SUBJECT_REPO_PATH}" >&2
   jf rt upload "$SUBJECT_FILE" "$SUBJECT_REPO_PATH"
 else
-  echo "Skipping subject upload for existing subject ${SUBJECT_REPO_PATH}"
+  echo "Skipping subject upload for existing subject ${SUBJECT_REPO_PATH}" >&2
 fi
 
 # Register cleanup before creating the key file, and create it with a
@@ -45,7 +48,7 @@ evd_args=(
 
 if [ -n "${MARKDOWN_FILE:-}" ]; then
   if [ -f "$MARKDOWN_FILE" ]; then
-    echo "Attaching markdown report ${MARKDOWN_FILE}"
+    echo "Attaching markdown report ${MARKDOWN_FILE}" >&2
     evd_args+=(--markdown "$MARKDOWN_FILE")
   else
     echo "::warning::MARKDOWN_FILE set but not found: ${MARKDOWN_FILE}; skipping --markdown" >&2
@@ -54,4 +57,4 @@ fi
 
 jf evd create "${evd_args[@]}"
 
-echo "Evidence uploaded successfully"
+echo "Evidence uploaded successfully" >&2

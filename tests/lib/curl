@@ -12,6 +12,7 @@ set -euo pipefail
 
 args=("$@")
 out_file=""
+hdr_file=""
 url=""
 i=0
 while [[ $i -lt ${#args[@]} ]]; do
@@ -20,7 +21,11 @@ while [[ $i -lt ${#args[@]} ]]; do
       i=$((i + 1))
       out_file="${args[$i]}"
       ;;
-    -H|-w|-D|-K|--config)
+    -D)
+      i=$((i + 1))
+      hdr_file="${args[$i]}"
+      ;;
+    -H|-w|-K|--config)
       i=$((i + 1))
       ;;
     -sS|-L)
@@ -94,6 +99,18 @@ else
     body="$(printf '%s' "$selected" | jq -r '.body')"
   else
     body="$(printf '%s' "$selected" | jq -c '.body')"
+  fi
+fi
+
+# When response headers are requested (-D) and the matched rule declares a
+# "link" value, emit it as a Link header so the Link-header paginator can be
+# exercised (e.g. multi-page PR reviews/commits).
+if [[ -n "$hdr_file" ]]; then
+  link="$(printf '%s' "$selected" | jq -r 'if type == "object" then (.link // "") else "" end')"
+  if [[ -n "$link" ]]; then
+    printf 'link: %s\r\n' "$link" > "$hdr_file"
+  else
+    : > "$hdr_file"
   fi
 fi
 
