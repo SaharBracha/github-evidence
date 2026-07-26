@@ -12,7 +12,8 @@
     "collection",
     "summary",
     "branches",
-    "rulesets"
+    "rulesets",
+    "raw_snapshot"
   ],
   "properties": {
     "schema_version": {
@@ -81,7 +82,7 @@
     },
     "raw_snapshot": {
       "type": "object",
-      "description": "Optional full collector snapshot; present when include_raw_snapshot is true."
+      "description": "Full collector snapshot, embedded in every predicate."
     }
   },
   "$defs": {

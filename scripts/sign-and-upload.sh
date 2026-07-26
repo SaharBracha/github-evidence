@@ -5,8 +5,7 @@
 #
 # Required env: SUBJECT_FILE, SUBJECT_REPO_PATH, PREDICATE_FILE, PREDICATE_TYPE,
 #               PROJECT_KEY, EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
-# Optional env: UPLOAD_SUBJECT (default "true"),
-#               MARKDOWN_FILE (human-readable report attached via --markdown).
+# Optional env: MARKDOWN_FILE (human-readable report attached via --markdown).
 set -euo pipefail
 # This script writes the private signing key to disk. Force xtrace off so an
 # inherited `set -x` or RUNNER_DEBUG=1 can never echo the PEM into the run log.
@@ -19,16 +18,11 @@ set +x
 : "${PROJECT_KEY:?PROJECT_KEY must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
 : "${EVIDENCE_KEY_ALIAS:?EVIDENCE_KEY_ALIAS must be set}"
-UPLOAD_SUBJECT="${UPLOAD_SUBJECT:-true}"
 
 jf rt ping
 
-if [ "$UPLOAD_SUBJECT" = "true" ]; then
-  echo "Uploading subject ${SUBJECT_FILE} to ${SUBJECT_REPO_PATH}" >&2
-  jf rt upload "$SUBJECT_FILE" "$SUBJECT_REPO_PATH"
-else
-  echo "Skipping subject upload for existing subject ${SUBJECT_REPO_PATH}" >&2
-fi
+echo "Uploading subject ${SUBJECT_FILE} to ${SUBJECT_REPO_PATH}" >&2
+jf rt upload "$SUBJECT_FILE" "$SUBJECT_REPO_PATH"
 
 # Register cleanup before creating the key file, and create it with a
 # restrictive umask, so the private key is never briefly world-readable and is

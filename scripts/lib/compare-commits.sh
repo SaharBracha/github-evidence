@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/github-api.sh"
 
 github_compare_commit_shas() {
-  local gh_api_host="$1"
+  local api_url="$1"
   local owner="$2"
   local repo="$3"
   local previous_sha="${4:-}"
@@ -24,7 +24,7 @@ github_compare_commit_shas() {
 
   local diff_response
   diff_response=$(gh_get_required \
-    "${gh_api_host}/repos/${owner}/${repo}/compare/${previous_sha}...${current_sha}")
+    "${api_url}/repos/${owner}/${repo}/compare/${previous_sha}...${current_sha}")
 
   # Strip unescaped control characters (U+0000-U+001F) that jq cannot parse
   # inside JSON strings. Keep tab, newline, and carriage return JSON whitespace.
@@ -46,7 +46,7 @@ github_compare_commit_shas() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   if [[ "$#" -ne 5 ]]; then
-    echo "usage: $0 <gh-api-host> <owner> <repo> <previous-sha> <current-sha>" >&2
+    echo "usage: $0 <api-url> <owner> <repo> <previous-sha> <current-sha>" >&2
     exit 2
   fi
 

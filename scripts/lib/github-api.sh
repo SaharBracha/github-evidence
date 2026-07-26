@@ -17,10 +17,10 @@
 # and must degrade gracefully, while *pull-request* data is required and should
 # fail the run loudly if it cannot be read.
 #
-# Requires: curl, jq. Expects GITHUB_TOKEN in the environment; GITHUB_API_URL
-# (default https://api.github.com) selects the API host, e.g. for GHES.
+# Requires: curl, jq. Expects GITHUB_TOKEN in the environment. All requests go
+# to the public GitHub REST API.
 
-GH_API_BASE_URL="${GITHUB_API_URL:-https://api.github.com}"
+GH_API_BASE_URL="https://api.github.com"
 GH_API_VERSION="2022-11-28"
 
 # ---------------------------------------------------------------------------

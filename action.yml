@@ -27,22 +27,6 @@ inputs:
   evidence_key_alias:
     description: 'Evidence signing key alias registered in the JFrog platform.'
     required: true
-  github_token:
-    description: 'GitHub token used to read repository data.'
-    required: false
-    default: ${{ github.token }}
-  gh_api_host:
-    description: 'GitHub REST API base URL (set for GHES).'
-    required: false
-    default: 'https://api.github.com'
-  upload_subject:
-    description: 'Whether to upload the subject artifact before attaching evidence.'
-    required: false
-    default: 'true'
-  include_raw_snapshot:
-    description: 'Embed the full collector snapshot in the branch-protection predicate.'
-    required: false
-    default: 'true'
   collect_branch_protection:
     description: 'Generate branch-protection evidence. Set to "false" to skip it.'
     required: false
@@ -79,15 +63,12 @@ runs:
       shell: bash
       env:
         AP: ${{ github.action_path }}
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-        GITHUB_API_URL: ${{ inputs.gh_api_host }}
+        GITHUB_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-        INCLUDE_RAW_SNAPSHOT: ${{ inputs.include_raw_snapshot }}
         COLLECT_BRANCH_PROTECTION: ${{ inputs.collect_branch_protection }}
         COLLECT_PULL_REQUEST_MERGE: ${{ inputs.collect_pull_request_merge }}
         COLLECTOR_VERSION: git-evidence
-        UPLOAD_SUBJECT: ${{ inputs.upload_subject }}
         PROJECT_KEY: ${{ inputs.jf_project }}
         EVIDENCE_SIGNING_KEY: ${{ inputs.evidence_signing_key }}
         EVIDENCE_KEY_ALIAS: ${{ inputs.evidence_key_alias }}

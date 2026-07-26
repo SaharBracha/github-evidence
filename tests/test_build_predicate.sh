@@ -45,7 +45,7 @@ test_branch_protection_predicate_and_subject() {
     MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/full-success.json" \
     env -u GH_OWNER -u GH_REPO "${REPO_ROOT}/scripts/collect-settings-snapshot.sh" > "$raw" || return 1
 
-  EVIDENCE_TYPE=branch-protection RAW_SNAPSHOT_FILE="$raw" INCLUDE_RAW_SNAPSHOT=false \
+  EVIDENCE_TYPE=branch-protection RAW_SNAPSHOT_FILE="$raw" \
     GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
     PREDICATE_OUT="$pred" SUBJECT_OUT="$subj" \
     "${REPO_ROOT}/scripts/build-predicate.sh" || return 1
@@ -63,7 +63,7 @@ test_branch_protection_predicate_and_subject() {
   assert_equal "true" "$(printf '%s' "$main" | jq -r '.code_owner_review_required.via_branch_protection')" "main code-owner via branch protection" || return 1
   assert_json_equal '["ci/build"]' "$(printf '%s' "$main" | jq -c '.required_status_checks.checks')" "required checks normalized from contexts" || return 1
   assert_equal "501" "$(jq -r '.rulesets[0].id' "$pred")" "ruleset id carried through" || return 1
-  assert_equal "null" "$(jq -r '.raw_snapshot // "null"' "$pred")" "raw_snapshot omitted when INCLUDE_RAW_SNAPSHOT=false" || return 1
+  assert_equal "1.0.0" "$(jq -r '.raw_snapshot.schema_version' "$pred")" "raw_snapshot is always embedded" || return 1
 
   # For branch protection, the subject file is the full collector snapshot.
   assert_equal "1.0.0" "$(jq -r '.schema_version' "$subj")" "subject is the snapshot document"
