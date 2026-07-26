@@ -1,4 +1,4 @@
-name: 'JFrog Git Evidence'
+name: 'JFrog Traceability'
 description: >-
   Collect Git evidence and attach it to Artifactory as signed JFrog evidence.
   On a merged pull request, records both the repository branch-protection

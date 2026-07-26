@@ -1,4 +1,4 @@
-# JFrog Git Evidence
+# JFrog Traceability
 
 A single GitHub Action that collects **Git evidence** from your repository and
 attaches it to Artifactory as **signed JFrog evidence**. It runs when a pull
@@ -54,7 +54,7 @@ wire these into your repository.
 Drop this one workflow into `.github/workflows/`:
 
 ```yaml
-name: JFrog Git Evidence
+name: JFrog Traceability
 on:
   pull_request:
     types: [closed]
