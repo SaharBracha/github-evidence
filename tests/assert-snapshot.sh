@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Verifies a settings snapshot produced by
 # scripts/branch-protection/collect-settings-snapshot.sh.
 #

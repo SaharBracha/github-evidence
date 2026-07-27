@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Orchestrates evidence generation for a merged pull request. For each enabled
 # evidence type it collects a raw snapshot, shapes the predicate + subject,
 # renders a human-readable markdown report, then signs and uploads. This is the

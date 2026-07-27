@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Small cross-cutting helpers shared by the collector and builder scripts.
 #
 # Sourced, not executed: no `set` here — the file inherits the caller's shell

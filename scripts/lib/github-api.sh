@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # One GitHub REST API client for the whole action, organized in layers so a
 # reader sees a single design rather than two parallel implementations.
 #

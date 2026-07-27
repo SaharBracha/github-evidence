@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Minimal bash test harness shared by all tests/test_*.sh files.
 
 TESTS_RUN=0

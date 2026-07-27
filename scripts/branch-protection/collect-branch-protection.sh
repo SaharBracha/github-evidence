@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Collects full branch protection settings: protected branches, each branch's
 # full protection document, repository rulesets (including inherited ones
 # GitHub reports as applicable), and the effective rules per protected branch.

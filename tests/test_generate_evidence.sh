@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Tests for scripts/generate-evidence.sh: the subject-path naming and the
 # collect_* opt-out / warning branches of the orchestration. generate() is
 # stubbed so no collectors or the JFrog CLI run - only the dispatch is exercised.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Shapes a collector's raw JSON document into the signed predicate and its
 # subject file, selected by EVIDENCE_TYPE. Writes predicate.json and
 # subject.json (paths overridable via PREDICATE_OUT / SUBJECT_OUT).

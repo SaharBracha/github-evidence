@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Orchestrates all repository-settings collectors, merges their output into one
 # document, and adds a computed code-owner-enforcement correlation. Prints the
 # resulting JSON document exactly once on stdout (no log markers), so

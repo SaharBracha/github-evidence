@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Tests for scripts/build-markdown.sh: renders a human-readable, render-safe
 # markdown report from a normalized predicate (plus subject for PR-merge), for
 # both evidence types. The report is attached via `jf evd create --markdown`.

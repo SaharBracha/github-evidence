@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # End-to-end test for scripts/branch-protection/collect-settings-snapshot.sh: runs the real
 # orchestrator (which shells out to the three collector scripts) against the
 # mock GitHub API and checks the printed document is a single valid JSON

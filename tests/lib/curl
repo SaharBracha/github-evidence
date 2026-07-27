@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Test-only stand-in for curl. Instead of making real HTTP requests, it serves
 # canned responses from the JSON routing table pointed to by
 # $MOCK_CURL_FIXTURE: an array of {path, query?, status, body} rules.

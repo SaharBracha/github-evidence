@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Renders a human-readable, per-run markdown report from a normalized predicate
 # document. The report is attached alongside the JSON predicate via
 # `jf evd create --markdown` so the evidence is legible in the JFrog UI.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Runs every tests/test_*.sh suite and exits non-zero if any suite failed.
 set -uo pipefail
 

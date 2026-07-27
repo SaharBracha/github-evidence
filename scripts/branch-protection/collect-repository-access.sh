@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Collects repository access and configuration: who/what can reach the
 # repository (collaborators, teams, invitations, deploy keys, webhooks, the
 # GitHub App installation) and how it is guarded (environments and their

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Collects the CODEOWNERS file (in GitHub's lookup precedence order), parses
 # its ownership rules, and collects GitHub's own CODEOWNERS validation errors.
 #

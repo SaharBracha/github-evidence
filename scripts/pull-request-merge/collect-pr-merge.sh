@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Collects merged-pull-request evidence for a single PR and prints a raw JSON
 # document on stdout for build-predicate.sh to shape into the
 # pull-request-merge predicate.

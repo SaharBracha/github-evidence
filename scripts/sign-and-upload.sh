@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Uploads the subject artifact (optional) and attaches signed JFrog evidence to
 # it with the JFrog CLI. Assumes the CLI is already configured (jf c / env), as
 # the setup-jfrog-cli step in action.yml does.

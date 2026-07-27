@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Tests for scripts/build-predicate.sh: shapes collector output into the two
 # predicates and their subject files, for both evidence types.
 set -uo pipefail

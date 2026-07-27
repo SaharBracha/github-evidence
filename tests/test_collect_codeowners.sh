@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Tests for scripts/branch-protection/collect-codeowners.sh against fixture-driven mock responses.
 set -uo pipefail
 

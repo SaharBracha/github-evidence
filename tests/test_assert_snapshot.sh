@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Unit tests for tests/assert-snapshot.sh - the snapshot verifier the
 # smoke-test job feeds the live collector's output into. Runs with zero
 # network: it builds one real snapshot by running the orchestrator against the

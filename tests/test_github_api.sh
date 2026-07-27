@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# (c) JFrog Ltd. (2026)
 # Unit tests for scripts/lib/github-api.sh: redaction, section normalization,
 # and pagination (bare-array, total_count-wrapped, and partial-failure) behavior.
 set -uo pipefail
