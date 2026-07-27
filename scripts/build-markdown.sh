@@ -70,6 +70,16 @@ case "$EVIDENCE_TYPE" in
                "| " + (.login | dash) + " | "
                + ((.email // "") | safe | if . == "" then "—" else "[" + . + "](mailto:" + . + ")" end) + " |"
              ) | join("\n")) + "\n" end)
+      + "\n## Commit Signatures (" + ((.commit_signatures // []) | length | tostring) + ")\n\n"
+      + "- **All commits verified:** " + (if .all_commits_verified then "yes" else "no" end) + "\n\n"
+      + (if ((.commit_signatures // []) | length) == 0 then "_None_\n"
+         else "| Commit | Verified | Reason | Signer |\n|---|---|---|---|\n"
+           + ((.commit_signatures // []) | map(
+               "| `" + (.sha | safe) + "` | "
+               + (if .verified then "yes" else "no" end) + " | "
+               + (.reason | dash) + " | "
+               + (.signer_login | dash) + " |"
+             ) | join("\n")) + "\n" end)
     ' "$PREDICATE_FILE" > "$MARKDOWN_OUT"
     ;;
 

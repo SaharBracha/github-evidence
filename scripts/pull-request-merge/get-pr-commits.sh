@@ -43,9 +43,31 @@ github_get_pr_code_committers_json() {
   '
 }
 
+github_get_pr_commit_signatures_json() {
+  local api_url="$1"
+  local owner="$2"
+  local repo="$3"
+  local pr_number="$4"
+  local commits_json
+
+  commits_json=$(github_get_pr_commits_json "$api_url" "$owner" "$repo" "$pr_number")
+
+  echo "$commits_json" | jq '
+    [
+      .[]
+      | {
+          sha: (.sha // ""),
+          verified: (.commit.verification.verified // false),
+          reason: (.commit.verification.reason // "unsigned"),
+          signer_login: (.author.login // null)
+        }
+    ]
+  '
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   if [[ "$#" -ne 5 ]]; then
-    echo "usage: $0 <commits|committers> <api-url> <owner> <repo> <pr-number>" >&2
+    echo "usage: $0 <commits|committers|signatures> <api-url> <owner> <repo> <pr-number>" >&2
     exit 2
   fi
 
@@ -59,8 +81,11 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     committers)
       github_get_pr_code_committers_json "$@"
       ;;
+    signatures)
+      github_get_pr_commit_signatures_json "$@"
+      ;;
     *)
-      echo "usage: $0 <commits|committers> <api-url> <owner> <repo> <pr-number>" >&2
+      echo "usage: $0 <commits|committers|signatures> <api-url> <owner> <repo> <pr-number>" >&2
       exit 2
       ;;
   esac

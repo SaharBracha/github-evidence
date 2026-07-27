@@ -13,11 +13,13 @@
     "approvers",
     "commits_on_target_branch",
     "code_committers",
+    "commit_signatures",
+    "all_commits_verified",
     "collection"
   ],
   "properties": {
     "schema_version": {
-      "const": "1.2"
+      "const": "1.0.0"
     },
     "subject_type": {
       "const": "PullRequestMerge"
@@ -45,6 +47,16 @@
       "items": {
         "$ref": "#/$defs/codeCommitter"
       }
+    },
+    "commit_signatures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/commitSignature"
+      }
+    },
+    "all_commits_verified": {
+      "type": "boolean",
+      "description": "True when the PR has at least one commit and every commit's signature was verified by GitHub."
     },
     "collection": {
       "$ref": "#/$defs/collection"
@@ -134,6 +146,35 @@
         "email": {
           "type": "string",
           "description": "Lowercase commit-author email, or an empty string when unavailable."
+        }
+      }
+    },
+    "commitSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha",
+        "verified",
+        "reason",
+        "signer_login"
+      ],
+      "properties": {
+        "sha": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "GitHub's cryptographic-signature verification result for the commit."
+        },
+        "reason": {
+          "type": "string",
+          "description": "GitHub verification reason (e.g. valid, unsigned, unknown_key); \"unsigned\" when no verification object was present."
+        },
+        "signer_login": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },

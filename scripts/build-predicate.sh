@@ -30,7 +30,7 @@ case "$EVIDENCE_TYPE" in
     PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/pull-request-merge/v1}"
 
     jq -n \
-      --arg schema_version "1.2" \
+      --arg schema_version "1.0.0" \
       --arg subject_type "PullRequestMerge" \
       --arg predicate_type "$PREDICATE_TYPE" \
       --slurpfile raw "$RAW_SNAPSHOT_FILE" \
@@ -49,6 +49,8 @@ case "$EVIDENCE_TYPE" in
            approvers: $r.approvers,
            commits_on_target_branch: $r.commits_on_target_branch,
            code_committers: $r.code_committers,
+           commit_signatures: $r.commit_signatures,
+           all_commits_verified: $r.all_commits_verified,
            collection: {
              collected_at: $r.collected_at,
              workflow_run_url: $r.workflow_run_url

@@ -47,6 +47,18 @@ test_commits_and_committers() {
   assert_equal "alice@example.com" "$(printf '%s' "$out" | jq -r '.code_committers[] | select(.login=="alice") | .email')" "committer email lowercased"
 }
 
+test_commit_signatures_and_verification_summary() {
+  local out sigs
+  out="$(collect_pr_merge)" || return 1
+  sigs="$(printf '%s' "$out" | jq -c '.commit_signatures')"
+  assert_equal "2" "$(printf '%s' "$sigs" | jq 'length')" "one signature entry per PR commit" || return 1
+  assert_equal "true" "$(printf '%s' "$sigs" | jq -r '.[] | select(.sha=="c1") | .verified')" "c1 is verified" || return 1
+  assert_equal "valid" "$(printf '%s' "$sigs" | jq -r '.[] | select(.sha=="c1") | .reason')" "c1 reason is valid" || return 1
+  assert_equal "false" "$(printf '%s' "$sigs" | jq -r '.[] | select(.sha=="c2") | .verified')" "c2 has no verification -> false" || return 1
+  assert_equal "unsigned" "$(printf '%s' "$sigs" | jq -r '.[] | select(.sha=="c2") | .reason')" "c2 defaults to unsigned" || return 1
+  assert_equal "false" "$(printf '%s' "$out" | jq -r '.all_commits_verified')" "not all commits verified"
+}
+
 test_unmerged_pr_fails() {
   local rc
   MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-not-merged.json" collect_pr_merge >/dev/null 2>&1
@@ -69,6 +81,7 @@ test_approvers_span_multiple_review_pages() {
 run_test test_collects_merged_pr_fields
 run_test test_approvers_are_deduped_latest_per_login
 run_test test_commits_and_committers
+run_test test_commit_signatures_and_verification_summary
 run_test test_unmerged_pr_fails
 run_test test_approvers_span_multiple_review_pages
 

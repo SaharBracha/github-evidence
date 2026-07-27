@@ -44,8 +44,8 @@
     "query": {"page": "1"},
     "status": 200,
     "body": [
-      {"author": {"login": "alice"}, "commit": {"author": {"email": "Alice@Example.com"}}},
-      {"author": {"login": "bob"}, "commit": {"author": {"email": "bob@example.com"}}}
+      {"sha": "c1", "author": {"login": "alice"}, "commit": {"author": {"email": "Alice@Example.com"}, "verification": {"verified": true, "reason": "valid"}}},
+      {"sha": "c2", "author": {"login": "bob"}, "commit": {"author": {"email": "bob@example.com"}}}
     ]
   }
 ]

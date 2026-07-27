@@ -95,6 +95,17 @@ CODE_COMMITTERS=$(bash "${SCRIPT_DIR}/get-pr-commits.sh" \
   "$GH_REPO" \
   "$PR_NUMBER")
 
+COMMIT_SIGNATURES=$(bash "${SCRIPT_DIR}/get-pr-commits.sh" \
+  signatures \
+  "$GH_API_URL" \
+  "$GH_OWNER" \
+  "$GH_REPO" \
+  "$PR_NUMBER")
+
+# A PR with no commits is not "all verified"; require at least one commit and
+# every commit verified.
+ALL_COMMITS_VERIFIED=$(echo "$COMMIT_SIGNATURES" | jq '(length > 0) and all(.[]; .verified)')
+
 jq -n \
   --arg owner "$GH_OWNER" \
   --arg repo "$GH_REPO" \
@@ -110,6 +121,8 @@ jq -n \
   --argjson approvers "$APPROVERS" \
   --argjson commits_on_target_branch "$COMMITS_ON_TARGET_BRANCH" \
   --argjson code_committers "$CODE_COMMITTERS" \
+  --argjson commit_signatures "$COMMIT_SIGNATURES" \
+  --argjson all_commits_verified "$ALL_COMMITS_VERIFIED" \
   --arg collected_at "$COLLECTED_AT" \
   --arg workflow_run_url "$WORKFLOW_RUN_URL" \
   '{
@@ -129,6 +142,8 @@ jq -n \
     approvers: $approvers,
     commits_on_target_branch: $commits_on_target_branch,
     code_committers: $code_committers,
+    commit_signatures: $commit_signatures,
+    all_commits_verified: $all_commits_verified,
     collected_at: $collected_at,
     workflow_run_url: $workflow_run_url
   }'

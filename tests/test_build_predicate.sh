@@ -27,11 +27,14 @@ test_pull_request_merge_predicate_and_subject() {
     "${REPO_ROOT}/scripts/build-predicate.sh" || return 1
 
   assert_valid_json "$(cat "$pred")" "predicate must be valid JSON" || return 1
-  assert_equal "1.2" "$(jq -r '.schema_version' "$pred")" "schema_version bumped to 1.2" || return 1
+  assert_equal "1.0.0" "$(jq -r '.schema_version' "$pred")" "schema_version bumped to 1.0.0" || return 1
   assert_equal "PullRequestMerge" "$(jq -r '.subject_type' "$pred")" "subject_type" || return 1
   assert_equal "null" "$(jq -r '.review // "null"' "$pred")" "the review block must be dropped" || return 1
   assert_equal "mergesha" "$(jq -r '.merge.merge_commit_sha' "$pred")" "merge commit carried through" || return 1
   assert_equal "2" "$(jq '.approvers | length' "$pred")" "approvers carried through" || return 1
+  assert_equal "2" "$(jq '.commit_signatures | length' "$pred")" "commit_signatures carried through" || return 1
+  assert_equal "true" "$(jq -r '.commit_signatures[] | select(.sha=="c1") | .verified' "$pred")" "c1 verified in predicate" || return 1
+  assert_equal "false" "$(jq -r '.all_commits_verified' "$pred")" "all_commits_verified carried through" || return 1
 
   assert_equal "headsha" "$(jq -r '.head_sha' "$subj")" "subject head_sha" || return 1
   assert_equal "7" "$(jq -r '.pr_number' "$subj")" "subject pr_number"

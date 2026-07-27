@@ -37,7 +37,7 @@ test_pull_request_merge_markdown() {
 
   cat > "$pred" <<'JSON'
 {
-  "schema_version": "1.2",
+  "schema_version": "1.0.0",
   "subject_type": "PullRequestMerge",
   "merge": {
     "merge_commit_sha": "ed0be7a1",
@@ -53,6 +53,11 @@ test_pull_request_merge_markdown() {
   "code_committers": [
     { "login": null, "email": "octocat@example.com" }
   ],
+  "commit_signatures": [
+    { "sha": "55bf3c3a", "verified": true, "reason": "valid", "signer_login": "octocat" },
+    { "sha": "0b2b9eec", "verified": false, "reason": "unsigned", "signer_login": null }
+  ],
+  "all_commits_verified": false,
   "collection": {
     "collected_at": "2026-07-23T11:28:30.000Z",
     "workflow_run_url": "https://github.com/acme/widget/actions/runs/30003234739"
@@ -80,6 +85,9 @@ JSON
   assert_contains "$out" "Code Committers (1)" "committer count" || return 1
   assert_contains "$out" "mailto:octocat@example.com" "committer email as mailto link" || return 1
   assert_contains "$out" "| — |" "null committer login renders as dash" || return 1
+  assert_contains "$out" "Commit Signatures (2)" "commit signature count" || return 1
+  assert_contains "$out" "**All commits verified:** no" "verification summary rendered" || return 1
+  assert_contains "$out" "unsigned" "unverified reason rendered" || return 1
   assert_render_safe "$out" "PR report must be render-safe"
 }
 

@@ -19,7 +19,9 @@ types and attaches them to your artifact in Artifactory:
   repo was governed when the change landed.
   ([schema](predicates/branch-protection.json))
 - **Merged pull request** — who approved the PR, what commits it put on the
-  target branch, and who authored them.
+  target branch, who authored them, and each commit's cryptographic-signature
+  verification status (`commit_signatures` plus an `all_commits_verified`
+  summary).
   ([schema](predicates/pull-request-merge.json))
 
 Each evidence attachment includes:
