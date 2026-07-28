@@ -1,46 +1,182 @@
 # JFrog Traceability
 
-A single GitHub Action that collects **Git evidence** from your repository and
+A single GitHub Action that collects **Git data** from your repository and
 attaches it to Artifactory as **signed JFrog evidence**. It runs when a pull
-request is **merged**, giving you a tamper-evident, cryptographically signed
-record of how each change was reviewed and how your repository was governed at
-that moment.
+request is **merged into your main branch**, giving you a tamper-evident,
+cryptographically signed record of how each change was reviewed and how your
+repository was governed at that moment.
 
-The action installs the JFrog CLI for you — you only supply your JFrog
-credentials and signing key.
+The action installs and configures the JFrog CLI for you — you only supply your
+JFrog credentials and signing key.
+
+## Why JFrog Traceability
+
+Teams enforce strong controls in GitHub — required pull-request reviews, branch
+protection, CODEOWNERS, signed commits — but that governance context stays in
+GitHub. By the time a build is promoted and released, there is no tamper-evident
+proof that a given change was actually reviewed, or that the repository was
+properly governed when the change merged. That **approval gap** is where
+unreviewed or unauthorized changes can slip into a release.
+
+JFrog Traceability closes the gap. It captures the Git governance behind each
+merge as **signed JFrog evidence** attached to your artifact in Artifactory, so
+the proof travels with the software. On promotion, **JFrog AppTrust** can
+automatically use this evidence and gate releases on it — turning
+review-and-merge controls into enforceable, auditable release policy.
 
 ## What you get
 
 For every merged pull request, the action produces up to two signed evidence
-types and attaches them to your artifact in Artifactory:
-
-- **Branch protection** — a normalized snapshot of the repository's protected
-  branches, rulesets, and CODEOWNERS enforcement at merge time. Proof of how the
-  repo was governed when the change landed.
-  ([schema](predicates/branch-protection.json))
-- **Merged pull request** — who approved the PR, what commits it put on the
-  target branch, who authored them, and each commit's cryptographic-signature
-  verification status (`commit_signatures` plus an `all_commits_verified`
-  summary).
-  ([schema](predicates/pull-request-merge.json))
-
-Each evidence attachment includes:
-
-- A **signed JSON predicate** conforming to a published schema — machine-readable
-  for automated policy checks and audits.
-- A **human-readable report** you can open directly in the JFrog evidence
-  **Content** tab.
+types and attaches them to your artifact in Artifactory. Each attachment
+includes a **signed JSON predicate** (machine-readable, conforming to a published
+schema) and a **human-readable report** you can open directly in the JFrog
+evidence **Content** tab.
 
 Everything is **read-only** against GitHub, and secret *values* are never
 fetched. You can opt out of either evidence type with the
 `collect_branch_protection` and `collect_pull_request_merge` inputs (both default
 `true`).
 
+### Branch protection
+
+A normalized snapshot of the repository's protected branches, rulesets, and
+CODEOWNERS enforcement at merge time — proof of how the repo was governed when
+the change landed. Full schema:
+[`branch-protection.json`](predicates/branch-protection.json).
+
+Example predicate (abbreviated):
+
+```json
+{
+  "schema_version": "1.0",
+  "predicate_type": "https://jfrog.com/evidence/branch-protection/v1",
+  "subject_type": "RepositoryBranchProtection",
+  "repository": {
+    "owner": "acme",
+    "name": "widget",
+    "full_name": "acme/widget",
+    "url": "https://github.com/acme/widget"
+  },
+  "summary": {
+    "protected_branch_count": 2,
+    "ruleset_count": 1,
+    "has_codeowners_file": true,
+    "codeowners_rule_count": 2,
+    "codeowners_validation_errors_present": false
+  },
+  "branches": [
+    {
+      "name": "main",
+      "protection_source": ["branch_protection", "ruleset"],
+      "required_pull_request_reviews": {
+        "required": true,
+        "required_approving_review_count": 2,
+        "require_code_owner_reviews": true,
+        "dismiss_stale_reviews": true,
+        "require_last_push_approval": false
+      },
+      "required_status_checks": { "strict": true, "checks": ["ci/build"] },
+      "enforce_admins": true,
+      "required_signatures": false,
+      "code_owner_review_required": { "via_branch_protection": true, "via_ruleset": true }
+    }
+  ]
+}
+```
+
+The full predicate also carries `rulesets`, a `collection` block, and the
+complete collector snapshot embedded verbatim as `raw_snapshot` (see the schema).
+
+**Using this in policies.** A JFrog AppTrust policy can evaluate fields such as
+`summary.protected_branch_count`,
+`branches[].required_pull_request_reviews.required_approving_review_count`,
+`branches[].required_pull_request_reviews.require_code_owner_reviews`,
+`branches[].required_signatures`, and `branches[].enforce_admins` — for example,
+to require that `main` enforced at least two approvals plus code-owner review at
+merge time. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
+
+### Merged pull request
+
+Who approved the PR, what commits it put on the target branch, who authored them,
+and each commit's cryptographic-signature verification status (`commit_signatures`
+plus an `all_commits_verified` summary). Full schema:
+[`pull-request-merge.json`](predicates/pull-request-merge.json).
+
+Example predicate:
+
+```json
+{
+  "schema_version": "1.0.0",
+  "subject_type": "PullRequestMerge",
+  "predicate_type": "https://jfrog.com/evidence/pull-request-merge/v1",
+  "merge": {
+    "merge_commit_sha": "9f3c1a2",
+    "merged_at": "2026-07-20T10:00:00Z",
+    "merged_by": "merger",
+    "target_branch": "main",
+    "target_base_sha": "1b7e0d4"
+  },
+  "approvers": [
+    { "review_id": 100, "login": "alice", "body": "lgtm", "submitted_at": "2026-07-19T09:00:00Z", "approved_sha": "7c2e9a1", "is_pr_head_approval": true },
+    { "review_id": 101, "login": "bob", "body": "", "submitted_at": "2026-07-18T09:00:00Z", "approved_sha": "3d5f8b0", "is_pr_head_approval": false }
+  ],
+  "commits_on_target_branch": ["c1a2b3c", "d4e5f6a"],
+  "code_committers": [
+    { "login": "alice", "email": "alice@example.com" },
+    { "login": "bob", "email": "bob@example.com" }
+  ],
+  "commit_signatures": [
+    { "sha": "c1a2b3c", "verified": true, "reason": "valid", "signer_login": "alice" },
+    { "sha": "d4e5f6a", "verified": false, "reason": "unsigned", "signer_login": "bob" }
+  ],
+  "all_commits_verified": false,
+  "collection": {
+    "collected_at": "2026-07-20T10:00:01.000Z",
+    "workflow_run_url": "https://github.com/acme/widget/actions/runs/123"
+  }
+}
+```
+
+**Using this in policies.** A JFrog AppTrust policy can evaluate
+`all_commits_verified`, the number and identity of `approvers`,
+`commit_signatures[].verified`, and `code_committers` — for example, to require
+that every commit is signature-verified and that the merge carried at least one
+approval. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
+
+## On the JFrog platform
+
+Once the action runs, the signed evidence lives in your JFrog project — you do
+**not** need JFrog AppTrust to produce or store it.
+
+**Where it lives.** Each run uploads a small subject artifact to the
+`git-evidence` repository in Artifactory and attaches the signed evidence to it.
+Subject paths are keyed to the merge commit:
+
+- `git-evidence/branch-protection/<owner>-branch-protection-<short-merge-sha>.json`
+- `git-evidence/pull-request-merge/<owner>-pull-request-merge-<short-merge-sha>.json`
+
+**How to retrieve and verify.** Open the subject artifact in the Artifactory UI
+and use its **Evidence** tab to see the signed predicate and the human-readable
+**Content** report. You can also list and cryptographically verify evidence with
+the JFrog CLI (`jf evidence verify`) or the Evidence REST API.
+
+**How it's used.** This evidence is a signed, auditable record that stands on its
+own — no AppTrust required. When the resulting artifact is later **promoted**,
+JFrog AppTrust automatically consumes this Git evidence to generate new AppTrust
+evidence, and AppTrust lifecycle policies can gate the promotion on it. See
+[AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
+
 ## Prerequisites
 
-Before adding the workflow, set up the following in the JFrog platform:
+You do **not** need to add `jfrog/setup-jfrog-cli` to your workflow — this action
+installs and configures the JFrog CLI for you (URL normalization, OIDC token
+exchange, and project selection) in its own step. The prerequisites are the
+platform-side setup:
 
 - A **JFrog project** (you'll reference its project key).
+- A **repository named `git-evidence`** in Artifactory, within that project. The
+  action uploads its evidence subject artifacts here, so it must exist before the
+  first run.
 - An **OIDC integration** under **Administration → OIDC**, with an identity
   mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
   access token is stored — the runner exchanges its GitHub OIDC token for JFrog
@@ -60,6 +196,7 @@ name: JFrog Traceability
 on:
   pull_request:
     types: [closed]
+    branches: [main]
 permissions:
   contents: read
   pull-requests: read
@@ -79,10 +216,12 @@ jobs:
           evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}
 ```
 
-The `closed` trigger fires on every PR close, but the `if` guard limits the job
-to merges only — so each merged PR produces both branch-protection and merged-PR
-evidence (unless disabled via the `collect_*` inputs below), and closed-unmerged
-PRs produce nothing. A runnable copy lives in
+The `branches: [main]` filter scopes the workflow to pull requests targeting
+`main`, and the `closed` trigger plus the `if: ...merged == true` guard limits the
+job to merges — so closed-unmerged PRs produce nothing. Each merge into `main`
+then produces both branch-protection and merged-PR evidence (unless disabled via
+the `collect_*` inputs below). Add more branches to the list to cover additional
+release branches. A runnable copy lives in
 [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
 ## Inputs
@@ -120,16 +259,6 @@ Authentication uses OIDC, so there is no stored JFrog access token — the only
 secret is the signing key. Configure a matching OIDC integration in the JFrog
 platform under **Administration → OIDC**, with an identity mapping for this
 repository, and use its provider name as `JF_OIDC_PROVIDER`.
-
-## What gets recorded
-
-Each evidence type ships a machine-readable JSON Schema (`.json`) describing its
-predicate. At merge time the action also generates a human-readable report from
-the run's actual data and attaches it to the evidence (`jf evd create
---markdown`), visible in the JFrog evidence Content tab.
-
-- Branch protection — [`branch-protection.json`](predicates/branch-protection.json)
-- Merged pull request — [`pull-request-merge.json`](predicates/pull-request-merge.json)
 
 ## Versioning
 
