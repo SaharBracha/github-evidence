@@ -45,7 +45,17 @@
     "status": 200,
     "body": [
       {"sha": "c1", "author": {"login": "alice"}, "commit": {"author": {"email": "Alice@Example.com"}, "verification": {"verified": true, "reason": "valid"}}},
-      {"sha": "c2", "author": {"login": "bob"}, "commit": {"author": {"email": "bob@example.com"}}}
+      {"sha": "c2", "author": null, "commit": {"author": {"email": "140279+bobby@users.noreply.github.com"}}}
     ]
+  },
+  {
+    "path": "/users/alice",
+    "status": 200,
+    "body": {"login": "alice", "email": "Alice.Public@Example.com"}
+  },
+  {
+    "path": "/users/bob",
+    "status": 200,
+    "body": {"login": "bob", "email": null}
   }
 ]

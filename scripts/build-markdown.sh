@@ -56,9 +56,11 @@ case "$EVIDENCE_TYPE" in
       + "- **Workflow run:** " + (.collection.workflow_run_url | dash) + "\n"
       + "\n## Approvers (" + ((.approvers // []) | length | tostring) + ")\n\n"
       + (if ((.approvers // []) | length) == 0 then "_None_\n"
-         else "| Login | Submitted At | Approved PR Head |\n|---|---|---|\n"
+         else "| Login | Email | Submitted At | Approved PR Head |\n|---|---|---|---|\n"
            + ((.approvers // []) | map(
-               "| " + (.login | dash) + " | " + (.submitted_at | dash) + " | "
+               "| " + (.login | dash) + " | "
+               + ((.email // "") | safe | if . == "" then "—" else "[" + . + "](mailto:" + . + ")" end) + " | "
+               + (.submitted_at | dash) + " | "
                + (if .is_pr_head_approval then "yes" else "no" end) + " |"
              ) | join("\n")) + "\n" end)
       + "\n## Commits on Target Branch (" + ((.commits_on_target_branch // []) | length | tostring) + ")\n\n"

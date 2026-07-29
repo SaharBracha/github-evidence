@@ -103,6 +103,43 @@ COMMIT_SIGNATURES=$(bash "${SCRIPT_DIR}/get-pr-commits.sh" \
   "$GH_REPO" \
   "$PR_NUMBER")
 
+# Best-effort identity enrichment, using only the workflow token - no extra
+# inputs or scopes. GitHub attests only part of each identity: commit metadata
+# carries the author email but resolves a login only when that email is verified
+# on a GitHub account, while the reviews API carries the approver login but never
+# an email. We fill the gaps from deterministic/public sources and leave the
+# field null when nothing authoritative is available - we never guess, because
+# this evidence is signed.
+
+# Approvers: try the user's public GitHub profile email (present only when the
+# user has chosen to publish one). Best-effort: a failed lookup leaves it null.
+APPROVERS=$(echo "$APPROVERS" | jq 'map(. + {email: null})')
+while IFS= read -r login; do
+  [ -z "$login" ] && continue
+  profile_email=$(gh_http_get "${GH_API_URL}/users/${login}" 2>/dev/null \
+    | jq -r '.body.email // ""' 2>/dev/null || echo "")
+  profile_email=$(printf '%s' "$profile_email" | tr '[:upper:]' '[:lower:]')
+  if [ -n "$profile_email" ] && [ "$profile_email" != "null" ]; then
+    APPROVERS=$(echo "$APPROVERS" | jq --arg l "$login" --arg e "$profile_email" '
+      map(if .login == $l and .email == null then .email = $e else . end)')
+  fi
+done < <(echo "$APPROVERS" | jq -r '.[] | select(.email == null and .login != null) | .login' | sort -u)
+
+# Code committers: recover a missing login from a GitHub no-reply commit email
+# (which encodes the login), leaving it null otherwise.
+CODE_COMMITTERS=$(echo "$CODE_COMMITTERS" | jq '
+  def noreply_login:
+    . as $e
+    | if ($e | test("@users\\.noreply\\.github\\.com$"))
+      then ($e | sub("@users\\.noreply\\.github\\.com$"; "") | sub("^[0-9]+\\+"; ""))
+      else null end;
+  map(
+    if (.login == null or .login == "")
+    then .login = (.email | noreply_login)
+    else . end
+  )
+')
+
 # A PR with no commits is not "all verified"; require at least one commit and
 # every commit verified.
 ALL_COMMITS_VERIFIED=$(echo "$COMMIT_SIGNATURES" | jq '(length > 0) and all(.[]; .verified)')

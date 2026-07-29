@@ -97,6 +97,7 @@
       "required": [
         "review_id",
         "login",
+        "email",
         "body",
         "submitted_at",
         "approved_sha",
@@ -111,6 +112,13 @@
             "string",
             "null"
           ]
+        },
+        "email": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Best-effort approver email: the user's public GitHub profile email when they have published one, else null. GitHub's reviews API does not itself carry an email."
         },
         "body": {
           "type": "string"

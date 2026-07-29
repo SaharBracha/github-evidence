@@ -102,6 +102,14 @@ and each commit's cryptographic-signature verification status (`commit_signature
 plus an `all_commits_verified` summary). Full schema:
 [`pull-request-merge.json`](predicates/pull-request-merge.json).
 
+Identity fields come straight from what GitHub attests, so each side is partial:
+a commit carries the author's email but resolves a `login` only when that email
+is verified on a GitHub account, while a review carries the approver's `login`
+but no email. The action fills these gaps on a best-effort basis (see
+[Identity enrichment](#identity-enrichment)); when nothing authoritative is
+available the field is left `null` rather than guessed, because the evidence is
+signed.
+
 Example predicate:
 
 ```json
@@ -117,8 +125,8 @@ Example predicate:
     "target_base_sha": "1b7e0d4"
   },
   "approvers": [
-    { "review_id": 100, "login": "alice", "body": "lgtm", "submitted_at": "2026-07-19T09:00:00Z", "approved_sha": "7c2e9a1", "is_pr_head_approval": true },
-    { "review_id": 101, "login": "bob", "body": "", "submitted_at": "2026-07-18T09:00:00Z", "approved_sha": "3d5f8b0", "is_pr_head_approval": false }
+    { "review_id": 100, "login": "alice", "email": "alice@example.com", "body": "lgtm", "submitted_at": "2026-07-19T09:00:00Z", "approved_sha": "7c2e9a1", "is_pr_head_approval": true },
+    { "review_id": 101, "login": "bob", "email": null, "body": "", "submitted_at": "2026-07-18T09:00:00Z", "approved_sha": "3d5f8b0", "is_pr_head_approval": false }
   ],
   "commits_on_target_branch": ["c1a2b3c", "d4e5f6a"],
   "code_committers": [
@@ -240,6 +248,25 @@ GitHub data is read from `api.github.com` with the workflow's built-in
 `GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
 Branch-protection fields the token isn't allowed to read are recorded as
 `unavailable` rather than failing the run.
+
+### Identity enrichment
+
+Merged-PR evidence records approver and committer identities. GitHub only
+attests part of each: a review has a `login` but no email, and a commit has an
+email but a `login` only when that email is verified on a GitHub account. The
+action fills these gaps best-effort using only the built-in `GITHUB_TOKEN` — no
+extra inputs, tokens, or scopes — and never guesses:
+
+- **Approver email** — the user's public GitHub profile email, when they have
+  published one; otherwise `null`.
+- **Committer login** — recovered from a `…@users.noreply.github.com` commit
+  email, which encodes the login; otherwise `null`.
+
+Anything unresolved is left `null` rather than guessed, because the evidence is
+signed. A committer `login` also resolves on its own — with no reliance on the
+no-reply heuristic — once a contributor **verifies their commit email on their
+GitHub account** (Settings → Emails), which is what makes GitHub attest the
+`login` directly.
 
 The merged-PR number is read automatically from the triggering `pull_request`
 event — there is no `pr_number` input. Each `collect_*` input is enabled only by
