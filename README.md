@@ -26,31 +26,28 @@ review-and-merge controls into enforceable, auditable release policy.
 
 ## What you get
 
-For every merged pull request, the action produces up to two signed evidence
-types and attaches them to your artifact in Artifactory. Each attachment
-includes a **signed JSON predicate** (machine-readable, conforming to a published
-schema) and a **human-readable report** you can open directly in the JFrog
-evidence **Content** tab.
+For every merged pull request, the action produces **one** signed evidence named
+`git-commit` and attaches it to your artifact in Artifactory. The single predicate
+carries two sections under separate root keys — `branch_protection` and
+`pull_request_merge` — so all the governance context for a merge travels as one
+attachment. It includes a **signed JSON predicate** (machine-readable, conforming
+to the published [`git-commit.json`](predicates/git-commit.json) schema) and a
+**human-readable report** you can open directly in the JFrog evidence **Content**
+tab.
 
-Everything is **read-only** against GitHub, and secret *values* are never
-fetched. You can opt out of either evidence type with the
-`collect_branch_protection` and `collect_pull_request_merge` inputs (both default
-`true`).
+Everything is **read-only** against GitHub, and secret *values* are never fetched.
 
-### Branch protection
+### Branch protection (`branch_protection` key)
 
 A normalized snapshot of the repository's protected branches, rulesets, and
 CODEOWNERS enforcement at merge time — proof of how the repo was governed when
-the change landed. Full schema:
-[`branch-protection.json`](predicates/branch-protection.json).
+the change landed. Lives under the predicate's `branch_protection` key (see the
+[`git-commit.json`](predicates/git-commit.json) schema).
 
-Example predicate (abbreviated):
+Example `branch_protection` section (abbreviated):
 
 ```json
 {
-  "schema_version": "1.0",
-  "predicate_type": "https://jfrog.com/evidence/branch-protection/v1",
-  "subject_type": "RepositoryBranchProtection",
   "repository": {
     "owner": "acme",
     "name": "widget",
@@ -84,23 +81,25 @@ Example predicate (abbreviated):
 }
 ```
 
-The full predicate also carries `rulesets`, a `collection` block, and the
-complete collector snapshot embedded verbatim as `raw_snapshot` (see the schema).
+The full section also carries `rulesets`, a `collection` block, and the complete
+collector snapshot embedded verbatim as `raw_snapshot` (see the schema).
 
 **Using this in policies.** A JFrog AppTrust policy can evaluate fields such as
-`summary.protected_branch_count`,
-`branches[].required_pull_request_reviews.required_approving_review_count`,
-`branches[].required_pull_request_reviews.require_code_owner_reviews`,
-`branches[].required_signatures`, and `branches[].enforce_admins` — for example,
+`branch_protection.summary.protected_branch_count`,
+`branch_protection.branches[].required_pull_request_reviews.required_approving_review_count`,
+`branch_protection.branches[].required_pull_request_reviews.require_code_owner_reviews`,
+`branch_protection.branches[].required_signatures`, and
+`branch_protection.branches[].enforce_admins` — for example,
 to require that `main` enforced at least two approvals plus code-owner review at
 merge time. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
 
-### Merged pull request
+### Merged pull request (`pull_request_merge` key)
 
 Who approved the PR, what commits it put on the target branch, who authored them,
 and each commit's cryptographic-signature verification status (`commit_signatures`
-plus an `all_commits_verified` summary). Full schema:
-[`pull-request-merge.json`](predicates/pull-request-merge.json).
+plus an `all_commits_verified` summary). Lives under the predicate's
+`pull_request_merge` key (see the
+[`git-commit.json`](predicates/git-commit.json) schema).
 
 Identity fields come straight from what GitHub attests, so each side is partial:
 a commit carries the author's email but resolves a `login` only when that email
@@ -110,13 +109,10 @@ but no email. The action fills these gaps on a best-effort basis (see
 available the field is left `null` rather than guessed, because the evidence is
 signed.
 
-Example predicate:
+Example `pull_request_merge` section:
 
 ```json
 {
-  "schema_version": "1.0.0",
-  "subject_type": "PullRequestMerge",
-  "predicate_type": "https://jfrog.com/evidence/pull-request-merge/v1",
   "merge": {
     "merge_commit_sha": "9f3c1a2",
     "merged_at": "2026-07-20T10:00:00Z",
@@ -146,10 +142,10 @@ Example predicate:
 ```
 
 **Using this in policies.** A JFrog AppTrust policy can evaluate
-`all_commits_verified`, the number and identity of `approvers`,
-`commit_signatures[].verified`, and `code_committers` — for example, to require
-that every commit is signature-verified and that the merge carried at least one
-approval. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
+`pull_request_merge.all_commits_verified`, the number and identity of
+`pull_request_merge.approvers`, `pull_request_merge.commit_signatures[].verified`,
+and `pull_request_merge.code_committers` — for example, to require that every
+commit is signature-verified and that the merge carried at least one approval. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
 
 ## On the JFrog platform
 
@@ -158,10 +154,9 @@ Once the action runs, the signed evidence lives in your JFrog project — you do
 
 **Where it lives.** Each run uploads a small subject artifact to the
 `git-evidence` repository in Artifactory and attaches the signed evidence to it.
-Subject paths are keyed to the merge commit:
+The subject path is keyed to the merge commit:
 
-- `git-evidence/branch-protection/<owner>-branch-protection-<short-merge-sha>.json`
-- `git-evidence/pull-request-merge/<owner>-pull-request-merge-<short-merge-sha>.json`
+- `git-evidence/git-commit/<owner>-git-commit-<short-merge-sha>.json`
 
 **How to retrieve and verify.** Open the subject artifact in the Artifactory UI
 and use its **Evidence** tab to see the signed predicate and the human-readable
@@ -227,8 +222,8 @@ jobs:
 The `branches: [main]` filter scopes the workflow to pull requests targeting
 `main`, and the `closed` trigger plus the `if: ...merged == true` guard limits the
 job to merges — so closed-unmerged PRs produce nothing. Each merge into `main`
-then produces both branch-protection and merged-PR evidence (unless disabled via
-the `collect_*` inputs below). Add more branches to the list to cover additional
+then produces one combined `git-commit` evidence covering both the branch
+protection and the merge. Add more branches to the list to cover additional
 release branches. A runnable copy lives in
 [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
@@ -241,8 +236,6 @@ release branches. A runnable copy lives in
 | `jf_project` | yes | — | JFrog project key. |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
 | `evidence_key_alias` | yes | — | Signing key alias registered in the JFrog platform. |
-| `collect_branch_protection` | no | `true` | Generate branch-protection evidence. Set to `false` to skip it. |
-| `collect_pull_request_merge` | no | `true` | Generate merged-pull-request evidence. Set to `false` to skip it. |
 
 GitHub data is read from `api.github.com` with the workflow's built-in
 `GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
