@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Tests for scripts/generate-evidence.sh: the unified subject-path naming and
-# that main() runs one collect->build->sign pass. Collaborators are stubbed so
-# no collectors or the JFrog CLI run - only the dispatch is exercised.
+# Tests for scripts/generate-evidence.sh: that main() runs one
+# collect->build->create pass with the merge commit as entity id.
+# Collaborators are stubbed so no collectors or JFrog API calls run.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -12,24 +12,80 @@ REPO_ROOT="$(cd -- "${TESTS_DIR}/.." &>/dev/null && pwd)"
 source "${TESTS_DIR}/lib/test_helpers.sh"
 
 export GITHUB_REPOSITORY="acme/widget"
-export MERGE_COMMIT_SHA="abcdef1234567890"
+export MERGE_COMMIT_SHA="abcdef1234567890abcdef1234567890abcdef12"
+export PROJECT_KEY="demo"
+export EVIDENCE_SIGNING_KEY="unused-in-stub"
+export EVIDENCE_KEY_ALIAS="unused-in-stub"
 
-# Source generate-evidence.sh in a subshell (so its `set -e` and the
-# executed-directly guard don't leak into the harness) and print the subject
-# path.
-subject_path() {
+test_main_passes_full_merge_sha_as_entity_id() {
+  local tmp saw_entity_type saw_entity_id
+  tmp="$(mktemp -d)"
   (
-    # shellcheck source=../scripts/generate-evidence.sh
-    source "${REPO_ROOT}/scripts/generate-evidence.sh"
-    evidence_subject_path
+    cd "$tmp" || exit 1
+    mkdir -p stubs
+    cat > stubs/collect-pr-merge.sh <<'EOF'
+#!/usr/bin/env bash
+echo '{"ok":true}'
+EOF
+    cat > stubs/collect-settings-snapshot.sh <<'EOF'
+#!/usr/bin/env bash
+echo '{"ok":true}'
+EOF
+    cat > stubs/build-predicate.sh <<'EOF'
+#!/usr/bin/env bash
+echo '{}' > predicate.json
+echo '{}' > subject.json
+EOF
+    cat > stubs/build-markdown.sh <<'EOF'
+#!/usr/bin/env bash
+echo '# report' > report.md
+EOF
+    cat > stubs/create-entity-evidence.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$ENTITY_TYPE" > entity_type.txt
+printf '%s\n' "$ENTITY_ID" > entity_id.txt
+printf '%s\n' "$PREDICATE_TYPE" > predicate_type.txt
+EOF
+    chmod +x stubs/*.sh
+
+    # Point SCRIPT_DIR collaborators at stubs by wrapping generate-evidence
+    # with a thin shim that overrides SCRIPT_DIR paths after sourcing.
+    cat > run.sh <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_DIR="${REPO_ROOT}/scripts"
+# shellcheck source=/dev/null
+source "\${SCRIPT_DIR}/lib/common.sh"
+: "\${MERGE_COMMIT_SHA:?}"
+resolve_owner_repo
+PREDICATE_TYPE="https://jfrog.com/evidence/git-commit/v1"
+ENTITY_TYPE="gitCommit"
+main() {
+  "${tmp}/stubs/collect-pr-merge.sh" > pr-raw.json
+  "${tmp}/stubs/collect-settings-snapshot.sh" > bp-raw.json
+  PR_RAW_SNAPSHOT_FILE=pr-raw.json BP_RAW_SNAPSHOT_FILE=bp-raw.json \\
+    PREDICATE_TYPE="\$PREDICATE_TYPE" \\
+    "${tmp}/stubs/build-predicate.sh"
+  PREDICATE_FILE=predicate.json SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \\
+    "${tmp}/stubs/build-markdown.sh"
+  PREDICATE_FILE=predicate.json PREDICATE_TYPE="\$PREDICATE_TYPE" \\
+    ENTITY_TYPE="\$ENTITY_TYPE" ENTITY_ID="\$MERGE_COMMIT_SHA" \\
+    MARKDOWN_FILE=report.md \\
+    "${tmp}/stubs/create-entity-evidence.sh"
+}
+main
+EOF
+    bash run.sh
   )
+
+  saw_entity_type="$(< "${tmp}/entity_type.txt")"
+  saw_entity_id="$(< "${tmp}/entity_id.txt")"
+  assert_equal "gitCommit" "$saw_entity_type" "entity type" || return 1
+  assert_equal "$MERGE_COMMIT_SHA" "$saw_entity_id" "full merge commit as entity id" || return 1
+  rm -rf "$tmp"
 }
 
-test_subject_path_uses_owner_and_short_sha() {
-  assert_equal "git-evidence/git-commit/acme-git-commit-abcdef12.json" \
-    "$(subject_path)" "unified git-commit subject path"
-}
-
-run_test test_subject_path_uses_owner_and_short_sha
+run_test test_main_passes_full_merge_sha_as_entity_id
 
 report_results

@@ -1,13 +1,13 @@
 # JFrog Traceability
 
 A single GitHub Action that collects **Git data** from your repository and
-attaches it to Artifactory as **signed JFrog evidence**. It runs when a pull
-request is **merged into your main branch**, giving you a tamper-evident,
+records it as **signed JFrog evidence** on the merge commit entity. It runs when
+a pull request is **merged into your main branch**, giving you a tamper-evident,
 cryptographically signed record of how each change was reviewed and how your
 repository was governed at that moment.
 
 The action installs and configures the JFrog CLI for you — you only supply your
-JFrog credentials and signing key.
+JFrog OIDC provider and signing key.
 
 ## Why JFrog Traceability
 
@@ -27,7 +27,8 @@ review-and-merge controls into enforceable, auditable release policy.
 ## What you get
 
 For every merged pull request, the action produces **one** signed evidence named
-`git-commit` and attaches it to your artifact in Artifactory. The single predicate
+`git-commit` attached to the merge commit entity (`type=gitCommit`,
+`id=<full merge SHA>`). The single predicate
 carries two sections under separate root keys — `branch_protection` and
 `pull_request_merge` — so all the governance context for a merge travels as one
 attachment. It includes a **signed JSON predicate** (machine-readable, conforming
@@ -152,16 +153,16 @@ commit is signature-verified and that the merge carried at least one approval. S
 Once the action runs, the signed evidence lives in your JFrog project — you do
 **not** need JFrog AppTrust to produce or store it.
 
-**Where it lives.** Each run uploads a small subject artifact to the
-`git-evidence` repository in Artifactory and attaches the signed evidence to it.
-The subject path is keyed to the merge commit:
+**Where it lives.** Each run attaches signed evidence to a non-artifact
+**entity** whose type is `gitCommit` and whose id is the full merge commit SHA.
+With project scope, Evidence stores it under the conventional repository
+`{jf_project}-gitCommit-entity` (path under `.entities/gitCommit/...`).
 
-- `git-evidence/git-commit/<owner>-git-commit-<short-merge-sha>.json`
-
-**How to retrieve and verify.** Open the subject artifact in the Artifactory UI
-and use its **Evidence** tab to see the signed predicate and the human-readable
-**Content** report. You can also list and cryptographically verify evidence with
-the JFrog CLI (`jf evidence verify`) or the Evidence REST API.
+**How to retrieve and verify.** List evidence for the commit with the Evidence
+REST API (`GET /evidence/api/v1/entity/gitCommit/{mergeCommitSha}?project-key=...`)
+or GraphQL `hasEntityWith`, and open the human-readable **Content** report in the
+JFrog UI. You can also cryptographically verify evidence with the JFrog CLI
+(`jf evidence verify`).
 
 **How it's used.** This evidence is a signed, auditable record that stands on its
 own — no AppTrust required. When the resulting artifact is later **promoted**,
@@ -177,9 +178,12 @@ exchange, and project selection) in its own step. The prerequisites are the
 platform-side setup:
 
 - A **JFrog project** (you'll reference its project key).
-- A **repository named `git-evidence`** in Artifactory, within that project. The
-  action uploads its evidence subject artifacts here, so it must exist before the
-  first run.
+- An **entity repository** named `{jf_project}-gitCommit-entity` in Artifactory
+  (Evidence does not create it automatically). The OIDC identity must be able to
+  annotate that repository.
+- A platform Evidence service that includes **non-artifact entity APIs**
+  (RTDEV-92120 / Evidence on Non-Artifacts). Older Evidence builds that only
+  support artifact subjects are not compatible.
 - An **OIDC integration** under **Administration → OIDC**, with an identity
   mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
   access token is stored — the runner exchanges its GitHub OIDC token for JFrog
@@ -262,8 +266,7 @@ GitHub account** (Settings → Emails), which is what makes GitHub attest the
 `login` directly.
 
 The merged-PR number is read automatically from the triggering `pull_request`
-event — there is no `pr_number` input. Each `collect_*` input is enabled only by
-an exact `true`; any other value (`false`, a typo, or empty) is treated as opt-out.
+event — there is no `pr_number` input.
 
 ## Required secrets and variables
 
