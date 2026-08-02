@@ -19,9 +19,6 @@ inputs:
       exchanges its GitHub OIDC token for a JFrog access token via this provider,
       so no long-lived access token is stored. Requires `id-token: write`.
     required: true
-  jf_project:
-    description: 'JFrog project key.'
-    required: true
   evidence_signing_key:
     description: 'Private key (raw PEM contents) used to sign the evidence.'
     required: true
@@ -48,7 +45,6 @@ runs:
       uses: jfrog/setup-jfrog-cli@v4.9.1
       env:
         JF_URL: ${{ env.JF_URL }}
-        JF_PROJECT: ${{ inputs.jf_project }}
       with:
         oidc-provider-name: ${{ inputs.oidc_provider_name }}
 
@@ -59,7 +55,6 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         COLLECTOR_VERSION: git-evidence
-        PROJECT_KEY: ${{ inputs.jf_project }}
         EVIDENCE_SIGNING_KEY: ${{ inputs.evidence_signing_key }}
         EVIDENCE_KEY_ALIAS: ${{ inputs.evidence_key_alias }}
       run: |

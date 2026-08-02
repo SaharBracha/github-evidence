@@ -26,7 +26,6 @@ jobs:
       - uses: jfrog/git-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}
-          jf_project: ${{ vars.JF_PROJECT }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
           evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
           evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}

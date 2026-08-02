@@ -150,7 +150,7 @@ commit is signature-verified and that the merge carried at least one approval. S
 
 ## On the JFrog platform
 
-Once the action runs, the signed evidence lives in your JFrog project — you do
+Once the action runs, the signed evidence lives in Artifactory — you do
 **not** need JFrog AppTrust to produce or store it.
 
 **Where it lives.** Each run attaches signed evidence to a non-artifact
@@ -218,7 +218,6 @@ jobs:
       - uses: jfrog/git-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}
-          jf_project: ${{ vars.JF_PROJECT }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
           evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
           evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}
@@ -238,7 +237,6 @@ release branches. A runnable copy lives in
 |---|---|---|---|
 | `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://&lt;host&gt;/`). |
 | `oidc_provider_name` | yes | — | Name of the OIDC integration in the JFrog platform; the runner exchanges its GitHub OIDC token for JFrog access (no stored token). |
-| `jf_project` | yes | — | JFrog project key. |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
 | `evidence_key_alias` | yes | — | Signing key alias registered in the JFrog platform. |
 
@@ -275,7 +273,6 @@ event — there is no `pr_number` input.
 |---|---|---|
 | `EVIDENCE_KEY` | secret | Private signing key (PEM). |
 | `JF_URL` | variable | JFrog platform host. |
-| `JF_PROJECT` | variable | JFrog project key. |
 | `JF_OIDC_PROVIDER` | variable | Name of the OIDC integration configured in the JFrog platform. |
 | `EVIDENCE_KEY_ALIAS` | variable | Signing key alias. |
 
