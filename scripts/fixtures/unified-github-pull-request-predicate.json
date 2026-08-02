@@ -1,0 +1,410 @@
+{
+	"branch_protection": {
+		"branches": [],
+		"collection": {
+			"collected_at": "2026-07-29T07:39:52.000Z",
+			"collector_version": "git-evidence",
+			"github_api_host": "https://api.github.com",
+			"token_scope_note": "collected with the workflow GITHUB_TOKEN; admin-only fields may be 'unavailable'",
+			"workflow_run_url": "https://github.com/SaharBracha/evidence-test/actions/runs/30432460350"
+		},
+		"raw_snapshot": {
+			"generated_at": "2026-07-29T07:39:52.000Z",
+			"repository": {
+				"full_name": "SaharBracha/evidence-test",
+				"name": "evidence-test",
+				"owner": "SaharBracha"
+			},
+			"schema_version": "1.0.0",
+			"sections": {
+				"branch_protection": {
+					"branches": {},
+					"protected_branches": {
+						"data": [],
+						"http_status": 200,
+						"status": "collected"
+					},
+					"ruleset_details": {},
+					"rulesets": {
+						"http_status": 403,
+						"message": "Upgrade to GitHub Pro or make this repository public to enable this feature.",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					}
+				},
+				"code_owner_enforcement": {
+					"codeowners_validation_errors_present": false,
+					"has_codeowners_file": false,
+					"owner_rule_count": 0,
+					"per_branch": []
+				},
+				"code_owners": {
+					"file": {
+						"http_status": 404,
+						"message": "No CODEOWNERS file found at .github/CODEOWNERS, CODEOWNERS, or docs/CODEOWNERS.",
+						"status": "unavailable"
+					},
+					"owner_rules": [],
+					"resolved_path": null,
+					"validation_errors": {
+						"http_status": 404,
+						"message": "Not Found",
+						"reason": "not_found",
+						"status": "unavailable"
+					}
+				},
+				"repository_access": {
+					"actions_permissions": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"actions_secrets": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"actions_selected_actions": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"actions_variables": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"actions_workflow_permissions": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"collaborators": {
+						"data": [
+							{
+								"avatar_url": "https://avatars.githubusercontent.com/u/47294585?v=4",
+								"events_url": "https://api.github.com/users/SaharBracha/events{/privacy}",
+								"followers_url": "https://api.github.com/users/SaharBracha/followers",
+								"following_url": "https://api.github.com/users/SaharBracha/following{/other_user}",
+								"gists_url": "https://api.github.com/users/SaharBracha/gists{/gist_id}",
+								"gravatar_id": "",
+								"html_url": "https://github.com/SaharBracha",
+								"id": 47294585,
+								"login": "SaharBracha",
+								"node_id": "MDQ6VXNlcjQ3Mjk0NTg1",
+								"organizations_url": "https://api.github.com/users/SaharBracha/orgs",
+								"permissions": {
+									"admin": true,
+									"maintain": true,
+									"pull": true,
+									"push": true,
+									"triage": true
+								},
+								"received_events_url": "https://api.github.com/users/SaharBracha/received_events",
+								"repos_url": "https://api.github.com/users/SaharBracha/repos",
+								"role_name": "admin",
+								"site_admin": false,
+								"starred_url": "https://api.github.com/users/SaharBracha/starred{/owner}{/repo}",
+								"subscriptions_url": "https://api.github.com/users/SaharBracha/subscriptions",
+								"type": "User",
+								"url": "https://api.github.com/users/SaharBracha",
+								"user_view_type": "public"
+							},
+							{
+								"avatar_url": "https://avatars.githubusercontent.com/u/77976014?v=4",
+								"events_url": "https://api.github.com/users/asafgabai/events{/privacy}",
+								"followers_url": "https://api.github.com/users/asafgabai/followers",
+								"following_url": "https://api.github.com/users/asafgabai/following{/other_user}",
+								"gists_url": "https://api.github.com/users/asafgabai/gists{/gist_id}",
+								"gravatar_id": "",
+								"html_url": "https://github.com/asafgabai",
+								"id": 77976014,
+								"login": "asafgabai",
+								"node_id": "MDQ6VXNlcjc3OTc2MDE0",
+								"organizations_url": "https://api.github.com/users/asafgabai/orgs",
+								"permissions": {
+									"admin": false,
+									"maintain": false,
+									"pull": true,
+									"push": true,
+									"triage": true
+								},
+								"received_events_url": "https://api.github.com/users/asafgabai/received_events",
+								"repos_url": "https://api.github.com/users/asafgabai/repos",
+								"role_name": "write",
+								"site_admin": false,
+								"starred_url": "https://api.github.com/users/asafgabai/starred{/owner}{/repo}",
+								"subscriptions_url": "https://api.github.com/users/asafgabai/subscriptions",
+								"type": "User",
+								"url": "https://api.github.com/users/asafgabai",
+								"user_view_type": "public"
+							},
+							{
+								"avatar_url": "https://avatars.githubusercontent.com/u/148053127?v=4",
+								"events_url": "https://api.github.com/users/yurinovo18/events{/privacy}",
+								"followers_url": "https://api.github.com/users/yurinovo18/followers",
+								"following_url": "https://api.github.com/users/yurinovo18/following{/other_user}",
+								"gists_url": "https://api.github.com/users/yurinovo18/gists{/gist_id}",
+								"gravatar_id": "",
+								"html_url": "https://github.com/yurinovo18",
+								"id": 148053127,
+								"login": "yurinovo18",
+								"node_id": "U_kgDOCNMchw",
+								"organizations_url": "https://api.github.com/users/yurinovo18/orgs",
+								"permissions": {
+									"admin": false,
+									"maintain": false,
+									"pull": true,
+									"push": true,
+									"triage": true
+								},
+								"received_events_url": "https://api.github.com/users/yurinovo18/received_events",
+								"repos_url": "https://api.github.com/users/yurinovo18/repos",
+								"role_name": "write",
+								"site_admin": false,
+								"starred_url": "https://api.github.com/users/yurinovo18/starred{/owner}{/repo}",
+								"subscriptions_url": "https://api.github.com/users/yurinovo18/subscriptions",
+								"type": "User",
+								"url": "https://api.github.com/users/yurinovo18",
+								"user_view_type": "public"
+							}
+						],
+						"http_status": 200,
+						"status": "collected"
+					},
+					"custom_properties": {
+						"http_status": 404,
+						"message": "Not Found",
+						"reason": "not_found",
+						"status": "unavailable"
+					},
+					"deploy_keys": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"environment_details": {},
+					"environments": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"installation": {
+						"http_status": 401,
+						"message": "A JSON web token could not be decoded",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"invitations": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"private_vulnerability_reporting": {
+						"http_status": 404,
+						"message": "Not Found",
+						"reason": "not_supported",
+						"status": "unavailable"
+					},
+					"repository": {
+						"data": {
+							"allow_forking": true,
+							"archive_url": "https://api.github.com/repos/SaharBracha/evidence-test/{archive_format}{/ref}",
+							"archived": false,
+							"assignees_url": "https://api.github.com/repos/SaharBracha/evidence-test/assignees{/user}",
+							"blobs_url": "https://api.github.com/repos/SaharBracha/evidence-test/git/blobs{/sha}",
+							"branches_url": "https://api.github.com/repos/SaharBracha/evidence-test/branches{/branch}",
+							"clone_url": "https://github.com/SaharBracha/evidence-test.git",
+							"collaborators_url": "https://api.github.com/repos/SaharBracha/evidence-test/collaborators{/collaborator}",
+							"comments_url": "https://api.github.com/repos/SaharBracha/evidence-test/comments{/number}",
+							"commits_url": "https://api.github.com/repos/SaharBracha/evidence-test/commits{/sha}",
+							"compare_url": "https://api.github.com/repos/SaharBracha/evidence-test/compare/{base}...{head}",
+							"contents_url": "https://api.github.com/repos/SaharBracha/evidence-test/contents/{+path}",
+							"contributors_url": "https://api.github.com/repos/SaharBracha/evidence-test/contributors",
+							"created_at": "2026-07-26T17:26:45Z",
+							"default_branch": "main",
+							"deployments_url": "https://api.github.com/repos/SaharBracha/evidence-test/deployments",
+							"description": null,
+							"disabled": false,
+							"downloads_url": "https://api.github.com/repos/SaharBracha/evidence-test/downloads",
+							"events_url": "https://api.github.com/repos/SaharBracha/evidence-test/events",
+							"fork": false,
+							"forks": 0,
+							"forks_count": 0,
+							"forks_url": "https://api.github.com/repos/SaharBracha/evidence-test/forks",
+							"full_name": "SaharBracha/evidence-test",
+							"git_commits_url": "https://api.github.com/repos/SaharBracha/evidence-test/git/commits{/sha}",
+							"git_refs_url": "https://api.github.com/repos/SaharBracha/evidence-test/git/refs{/sha}",
+							"git_tags_url": "https://api.github.com/repos/SaharBracha/evidence-test/git/tags{/sha}",
+							"git_url": "git://github.com/SaharBracha/evidence-test.git",
+							"has_discussions": false,
+							"has_downloads": false,
+							"has_issues": true,
+							"has_pages": false,
+							"has_projects": true,
+							"has_pull_requests": true,
+							"has_wiki": false,
+							"homepage": null,
+							"hooks_url": "https://api.github.com/repos/SaharBracha/evidence-test/hooks",
+							"html_url": "https://github.com/SaharBracha/evidence-test",
+							"id": 1313009139,
+							"is_template": false,
+							"issue_comment_url": "https://api.github.com/repos/SaharBracha/evidence-test/issues/comments{/number}",
+							"issue_events_url": "https://api.github.com/repos/SaharBracha/evidence-test/issues/events{/number}",
+							"issues_url": "https://api.github.com/repos/SaharBracha/evidence-test/issues{/number}",
+							"keys_url": "https://api.github.com/repos/SaharBracha/evidence-test/keys{/key_id}",
+							"labels_url": "https://api.github.com/repos/SaharBracha/evidence-test/labels{/name}",
+							"language": null,
+							"languages_url": "https://api.github.com/repos/SaharBracha/evidence-test/languages",
+							"license": null,
+							"merges_url": "https://api.github.com/repos/SaharBracha/evidence-test/merges",
+							"milestones_url": "https://api.github.com/repos/SaharBracha/evidence-test/milestones{/number}",
+							"mirror_url": null,
+							"name": "evidence-test",
+							"network_count": 0,
+							"node_id": "R_kgDOTkLt8w",
+							"notifications_url": "https://api.github.com/repos/SaharBracha/evidence-test/notifications{?since,all,participating}",
+							"open_issues": 0,
+							"open_issues_count": 0,
+							"owner": {
+								"avatar_url": "https://avatars.githubusercontent.com/u/47294585?v=4",
+								"events_url": "https://api.github.com/users/SaharBracha/events{/privacy}",
+								"followers_url": "https://api.github.com/users/SaharBracha/followers",
+								"following_url": "https://api.github.com/users/SaharBracha/following{/other_user}",
+								"gists_url": "https://api.github.com/users/SaharBracha/gists{/gist_id}",
+								"gravatar_id": "",
+								"html_url": "https://github.com/SaharBracha",
+								"id": 47294585,
+								"login": "SaharBracha",
+								"node_id": "MDQ6VXNlcjQ3Mjk0NTg1",
+								"organizations_url": "https://api.github.com/users/SaharBracha/orgs",
+								"received_events_url": "https://api.github.com/users/SaharBracha/received_events",
+								"repos_url": "https://api.github.com/users/SaharBracha/repos",
+								"site_admin": false,
+								"starred_url": "https://api.github.com/users/SaharBracha/starred{/owner}{/repo}",
+								"subscriptions_url": "https://api.github.com/users/SaharBracha/subscriptions",
+								"type": "User",
+								"url": "https://api.github.com/users/SaharBracha",
+								"user_view_type": "public"
+							},
+							"permissions": {
+								"admin": false,
+								"maintain": false,
+								"pull": false,
+								"push": false,
+								"triage": false
+							},
+							"private": true,
+							"pull_request_creation_policy": "all",
+							"pulls_url": "https://api.github.com/repos/SaharBracha/evidence-test/pulls{/number}",
+							"pushed_at": "2026-07-29T07:39:20Z",
+							"releases_url": "https://api.github.com/repos/SaharBracha/evidence-test/releases{/id}",
+							"size": 4,
+							"ssh_url": "git@github.com:SaharBracha/evidence-test.git",
+							"stargazers_count": 0,
+							"stargazers_url": "https://api.github.com/repos/SaharBracha/evidence-test/stargazers",
+							"statuses_url": "https://api.github.com/repos/SaharBracha/evidence-test/statuses/{sha}",
+							"subscribers_count": 0,
+							"subscribers_url": "https://api.github.com/repos/SaharBracha/evidence-test/subscribers",
+							"subscription_url": "https://api.github.com/repos/SaharBracha/evidence-test/subscription",
+							"svn_url": "https://github.com/SaharBracha/evidence-test",
+							"tags_url": "https://api.github.com/repos/SaharBracha/evidence-test/tags",
+							"teams_url": "https://api.github.com/repos/SaharBracha/evidence-test/teams",
+							"temp_clone_token": "AJ7VCKSFIFAWMX4K472CKSDKNGXXBAVPNFXHG5DBNRWGC5DJN5XF62LEZ4AAAAAFKIH6HTFRNFXHG5DBNRWGC5DJN5XF65DZOBS5UABBKNUXIZKTMNXXAZLEJFXHIZLHOJQXI2LPNZEW443UMFWGYYLUNFXW4",
+							"topics": [],
+							"trees_url": "https://api.github.com/repos/SaharBracha/evidence-test/git/trees{/sha}",
+							"updated_at": "2026-07-29T07:20:14Z",
+							"url": "https://api.github.com/repos/SaharBracha/evidence-test",
+							"visibility": "private",
+							"watchers": 0,
+							"watchers_count": 0,
+							"web_commit_signoff_required": false
+						},
+						"http_status": 200,
+						"status": "collected"
+					},
+					"teams": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					},
+					"webhooks": {
+						"http_status": 403,
+						"message": "Resource not accessible by integration",
+						"reason": "permission_denied",
+						"status": "unavailable"
+					}
+				}
+			}
+		},
+		"repository": {
+			"full_name": "SaharBracha/evidence-test",
+			"name": "evidence-test",
+			"owner": "SaharBracha",
+			"url": "https://github.com/SaharBracha/evidence-test"
+		},
+		"rulesets": [],
+		"summary": {
+			"codeowners_rule_count": 0,
+			"codeowners_validation_errors_present": false,
+			"has_codeowners_file": false,
+			"protected_branch_count": 0,
+			"ruleset_count": 0
+		}
+	},
+	"predicate_type": "https://jfrog.com/evidence/github-pull-request/v1",
+	"pull_request_merge": {
+		"all_commits_verified": true,
+		"approvers": [
+			{
+				"approved_sha": "ff1c792ee34d867a484a2375aee0b94ad1d18dd3",
+				"body": "",
+				"email": null,
+				"is_pr_head_approval": true,
+				"login": "asafgabai",
+				"review_id": 4805284196,
+				"submitted_at": "2026-07-29T07:39:13Z"
+			}
+		],
+		"code_committers": [
+			{
+				"email": "47294585+saharbracha@users.noreply.github.com",
+				"login": "SaharBracha"
+			}
+		],
+		"collection": {
+			"collected_at": "2026-07-29T07:39:43.000Z",
+			"workflow_run_url": "https://github.com/SaharBracha/evidence-test/actions/runs/30432460350"
+		},
+		"commit_signatures": [
+			{
+				"reason": "valid",
+				"sha": "ff1c792ee34d867a484a2375aee0b94ad1d18dd3",
+				"signer_login": "SaharBracha",
+				"verified": true
+			}
+		],
+		"commits_on_target_branch": [
+			"ff1c792ee34d867a484a2375aee0b94ad1d18dd3",
+			"dba5a2f652babc35867475e4ba3768efabcc52ce"
+		],
+		"merge": {
+			"merge_commit_sha": "dba5a2f652babc35867475e4ba3768efabcc52ce",
+			"merged_at": "2026-07-29T07:39:20Z",
+			"merged_by": "SaharBracha",
+			"target_base_sha": "012a025bb02e381c6ce13464fa99dbeebfbaac09",
+			"target_branch": "main"
+		}
+	},
+	"schema_version": "1.0.0",
+	"subject_type": "GithubPullRequest"
+}

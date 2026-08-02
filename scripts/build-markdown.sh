@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Renders a human-readable, per-run markdown report from the unified git-commit
-# predicate document. The report is attached alongside the JSON predicate via
-# `jf evd create --markdown` so the evidence is legible in the JFrog UI.
+# Renders a human-readable, per-run markdown report from the unified github-pull-request
+# predicate document. The report is included in the Evidence prepare request
+# (`markdown`) so the evidence is legible in the JFrog UI.
 #
 # The JFrog Evidence markdown viewer HTML-escapes and then literally displays
 # the characters " < > (as &#34; &lt; &gt;). Everything emitted here therefore
@@ -41,7 +41,7 @@ jq -r --argjson subj "$subject_json" "$MD_HELPERS"'
   | .branch_protection as $bp
   | ($bp.raw_snapshot.sections.branch_protection.rulesets // {}) as $rs_raw
 
-  | "# Git Commit Evidence Report\n"
+  | "# Github Pull Request Evidence Report\n"
 
   + "\n# Pull Request Merge\n"
   + "\n## Summary\n"

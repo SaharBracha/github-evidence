@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
 # Tests for scripts/build-predicate.sh: shapes both collector outputs into the
-# unified git-commit predicate and its merge-commit-identity subject file.
+# unified github-pull-request predicate and its merge-commit-identity subject file.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -15,7 +15,7 @@ export PATH="${TESTS_DIR}/lib:${PATH}"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-test_git_commit_predicate_and_subject() {
+test_git_pull_request_predicate_and_subject() {
   local pr_raw bp_raw pred subj
   pr_raw="${WORK}/raw-pr.json"; bp_raw="${WORK}/raw-bp.json"
   pred="${WORK}/pred.json"; subj="${WORK}/subj.json"
@@ -38,8 +38,8 @@ test_git_commit_predicate_and_subject() {
 
   # Top-level envelope
   assert_equal "1.0.0" "$(jq -r '.schema_version' "$pred")" "top-level schema_version" || return 1
-  assert_equal "GitCommit" "$(jq -r '.subject_type' "$pred")" "top-level subject_type" || return 1
-  assert_equal "https://jfrog.com/evidence/git-commit/v1" "$(jq -r '.predicate_type' "$pred")" "top-level predicate_type" || return 1
+  assert_equal "GithubPullRequest" "$(jq -r '.subject_type' "$pred")" "top-level subject_type" || return 1
+  assert_equal "https://jfrog.com/evidence/github-pull-request/v1" "$(jq -r '.predicate_type' "$pred")" "top-level predicate_type" || return 1
 
   # Inner envelopes are stripped from both sections.
   assert_equal "null" "$(jq -r '.pull_request_merge.schema_version // "null"' "$pred")" "no inner PR schema_version" || return 1
@@ -69,6 +69,6 @@ test_git_commit_predicate_and_subject() {
   assert_equal "7" "$(jq -r '.pr_number' "$subj")" "subject pr_number"
 }
 
-run_test test_git_commit_predicate_and_subject
+run_test test_git_pull_request_predicate_and_subject
 
 report_results

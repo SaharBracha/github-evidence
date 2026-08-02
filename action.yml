@@ -1,9 +1,9 @@
 name: 'JFrog Traceability'
 description: >-
-  Collect Git evidence and attach it to Artifactory as signed JFrog evidence.
-  On a merged pull request, records one combined git-commit evidence covering
-  the repository branch-protection settings and the merge's approvers, commits,
-  and committers.
+  Collect Git evidence and attach it as signed JFrog evidence on the merge
+  commit entity. On a merged pull request, records one combined github-pull-request
+  evidence covering the repository branch-protection settings and the merge's
+  approvers, commits, and committers.
 author: JFrog
 branding:
   icon: shield
@@ -58,7 +58,6 @@ runs:
         AP: ${{ github.action_path }}
         GITHUB_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-        MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         COLLECTOR_VERSION: git-evidence
         PROJECT_KEY: ${{ inputs.jf_project }}
         EVIDENCE_SIGNING_KEY: ${{ inputs.evidence_signing_key }}

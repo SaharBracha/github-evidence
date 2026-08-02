@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Shapes the two collector raw JSON documents into a single unified "git-commit"
+# Shapes the two collector raw JSON documents into a single unified "github-pull-request"
 # predicate and its subject file. The predicate carries both bodies under root
 # keys `pull_request_merge` and `branch_protection`; the subject is a compact
 # merge-commit identity. Writes predicate.json and subject.json (paths
 # overridable via PREDICATE_OUT / SUBJECT_OUT).
 #
 # Required env: PR_RAW_SNAPSHOT_FILE, BP_RAW_SNAPSHOT_FILE.
-# Optional env: PREDICATE_TYPE (default git-commit/v1), PREDICATE_OUT,
+# Optional env: PREDICATE_TYPE (default github-pull-request/v1), PREDICATE_OUT,
 #   SUBJECT_OUT, COLLECTOR_VERSION, WORKFLOW_RUN_URL, GITHUB_SERVER_URL,
 #   GITHUB_REPOSITORY, GITHUB_RUN_ID.
 set -euo pipefail
@@ -21,7 +21,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 PREDICATE_OUT="${PREDICATE_OUT:-predicate.json}"
 SUBJECT_OUT="${SUBJECT_OUT:-subject.json}"
 
-PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/git-commit/v1}"
+PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/github-pull-request/v1}"
 COLLECTOR_VERSION="${COLLECTOR_VERSION:-git-evidence}"
 API_HOST="https://api.github.com"
 SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
@@ -39,7 +39,7 @@ done
 
 jq -n \
   --arg schema_version "1.0.0" \
-  --arg subject_type "GitCommit" \
+  --arg subject_type "GithubPullRequest" \
   --arg predicate_type "$PREDICATE_TYPE" \
   --arg collector_version "$COLLECTOR_VERSION" \
   --arg github_api_host "$API_HOST" \

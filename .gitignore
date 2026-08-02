@@ -7,3 +7,10 @@ predicate.json
 subject.json
 snapshot.json
 evidence-signing-key.pem
+prepare-req.json
+prepare-resp.json
+envelope.json
+create-resp.json
+report.md
+pr-raw.json
+bp-raw.json
