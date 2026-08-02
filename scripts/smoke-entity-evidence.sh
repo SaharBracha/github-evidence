@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Local smoke test: prepare → DSSE sign → create evidence on gitCommit entity.
-# Targets the default entity repo `gitCommit-entity` (no project/application scope).
-# Default predicate + markdown come from fixtures/unified-git-commit-predicate.json.
+# Local smoke test: prepare → DSSE sign → create evidence on githubPullRequest entity.
+# Targets the default entity repo `githubPullRequest-entity` (no project/application scope).
+# Default predicate + markdown come from fixtures/unified-github-pull-request-predicate.json.
 #
 # Required env:
 #   JF_URL              Platform base URL, e.g. http://localhost:8082
-#   JF_ACCESS_TOKEN     Bearer token with annotate on gitCommit-entity
+#   JF_ACCESS_TOKEN     Bearer token with annotate on githubPullRequest-entity
 #   EVIDENCE_SIGNING_KEY  Private PEM contents, or set EVIDENCE_SIGNING_KEY_FILE
 #   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory
 #
 # Optional env:
-#   ENTITY_ID           Default: merge_commit_sha from the predicate fixture
-#   PREDICATE_FILE      Default: fixtures/unified-git-commit-predicate.json
+#   ENTITY_TYPE         Default: githubPullRequest
+#   ENTITY_ID           Default: {owner}-{repo}-{prID} from fixture + PR_NUMBER
+#   PR_NUMBER           Default: 1 (used when ENTITY_ID is unset)
+#   PREDICATE_FILE      Default: fixtures/unified-github-pull-request-predicate.json
 #   MARKDOWN_FILE       Default: rendered from the predicate via build-markdown.sh
 #   PROVIDER_ID         Default: github-actions
 #   SKIP_LIST           If set, skip the final GET
@@ -27,7 +29,7 @@ set -euo pipefail
 set +x
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-git-commit-predicate.json"
+DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-github-pull-request-predicate.json"
 
 : "${JF_URL:?JF_URL must be set}"
 : "${JF_ACCESS_TOKEN:?JF_ACCESS_TOKEN must be set}"
@@ -39,7 +41,7 @@ fi
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY or EVIDENCE_SIGNING_KEY_FILE must be set}"
 
 JF_URL="${JF_URL%/}"
-ENTITY_TYPE="gitCommit"
+ENTITY_TYPE="${ENTITY_TYPE:-githubPullRequest}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 PREDICATE_FILE="${PREDICATE_FILE:-$DEFAULT_PREDICATE}"
 
@@ -48,10 +50,17 @@ if [[ ! -f "$PREDICATE_FILE" ]]; then
   exit 1
 fi
 
-PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/git-commit/v1"' "$PREDICATE_FILE")}"
-ENTITY_ID="${ENTITY_ID:-$(jq -r '.pull_request_merge.merge.merge_commit_sha // empty' "$PREDICATE_FILE")}"
-if [[ -z "$ENTITY_ID" ]]; then
-  ENTITY_ID="$(openssl rand -hex 20)"
+PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/github-pull-request/v1"' "$PREDICATE_FILE")}"
+# Default id: readable "{owner}-{repo}-{prID}" from the fixture repository.
+if [[ -z "${ENTITY_ID:-}" ]]; then
+  owner="$(jq -r '.branch_protection.repository.owner // empty' "$PREDICATE_FILE")"
+  repo="$(jq -r '.branch_protection.repository.name // empty' "$PREDICATE_FILE")"
+  pr="${PR_NUMBER:-1}"
+  if [[ -n "$owner" && -n "$repo" ]]; then
+    ENTITY_ID="${owner}-${repo}-${pr}"
+  else
+    ENTITY_ID="$(openssl rand -hex 20)"
+  fi
 fi
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/smoke-entity-evidence.XXXXXX")"
@@ -109,7 +118,7 @@ jq_filter='{
 
 jq "${jq_args[@]}" "$jq_filter" > "$PREPARE_REQ"
 
-echo "→ prepare  entity=${ENTITY_TYPE}/${ENTITY_ID}  (repo gitCommit-entity)" >&2
+echo "→ prepare  entity=${ENTITY_TYPE}/${ENTITY_ID}  (repo githubPullRequest-entity)" >&2
 echo "  predicate=${PREDICATE_FILE}" >&2
 http_code="$(
   curl -sS -o "$PREPARE_RESP" -w '%{http_code}' \

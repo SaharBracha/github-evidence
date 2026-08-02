@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
 # Tests for scripts/generate-evidence.sh: that main() runs one
-# collect->build->create pass with the merge commit as entity id.
+# collect->build->create pass with a {owner}-{repo}-{prID} githubPullRequest entity id.
 # Collaborators are stubbed so no collectors or JFrog API calls run.
 set -uo pipefail
 
@@ -12,12 +12,12 @@ REPO_ROOT="$(cd -- "${TESTS_DIR}/.." &>/dev/null && pwd)"
 source "${TESTS_DIR}/lib/test_helpers.sh"
 
 export GITHUB_REPOSITORY="acme/widget"
-export MERGE_COMMIT_SHA="abcdef1234567890abcdef1234567890abcdef12"
+export PR_NUMBER="123"
 export PROJECT_KEY="demo"
 export EVIDENCE_SIGNING_KEY="unused-in-stub"
 export EVIDENCE_KEY_ALIAS="unused-in-stub"
 
-test_main_passes_full_merge_sha_as_entity_id() {
+test_main_passes_owner_repo_pr_as_entity_id() {
   local tmp saw_entity_type saw_entity_id
   tmp="$(mktemp -d)"
   (
@@ -57,10 +57,11 @@ set -euo pipefail
 SCRIPT_DIR="${REPO_ROOT}/scripts"
 # shellcheck source=/dev/null
 source "\${SCRIPT_DIR}/lib/common.sh"
-: "\${MERGE_COMMIT_SHA:?}"
+: "\${PR_NUMBER:?}"
 resolve_owner_repo
-PREDICATE_TYPE="https://jfrog.com/evidence/git-commit/v1"
-ENTITY_TYPE="gitCommit"
+PREDICATE_TYPE="https://jfrog.com/evidence/github-pull-request/v1"
+ENTITY_TYPE="githubPullRequest"
+ENTITY_ID="\${GH_OWNER}-\${GH_REPO}-\${PR_NUMBER}"
 main() {
   "${tmp}/stubs/collect-pr-merge.sh" > pr-raw.json
   "${tmp}/stubs/collect-settings-snapshot.sh" > bp-raw.json
@@ -70,7 +71,7 @@ main() {
   PREDICATE_FILE=predicate.json SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \\
     "${tmp}/stubs/build-markdown.sh"
   PREDICATE_FILE=predicate.json PREDICATE_TYPE="\$PREDICATE_TYPE" \\
-    ENTITY_TYPE="\$ENTITY_TYPE" ENTITY_ID="\$MERGE_COMMIT_SHA" \\
+    ENTITY_TYPE="\$ENTITY_TYPE" ENTITY_ID="\$ENTITY_ID" \\
     MARKDOWN_FILE=report.md \\
     "${tmp}/stubs/create-entity-evidence.sh"
 }
@@ -81,11 +82,11 @@ EOF
 
   saw_entity_type="$(< "${tmp}/entity_type.txt")"
   saw_entity_id="$(< "${tmp}/entity_id.txt")"
-  assert_equal "gitCommit" "$saw_entity_type" "entity type" || return 1
-  assert_equal "$MERGE_COMMIT_SHA" "$saw_entity_id" "full merge commit as entity id" || return 1
+  assert_equal "githubPullRequest" "$saw_entity_type" "entity type" || return 1
+  assert_equal "acme-widget-123" "$saw_entity_id" "owner-repo-pr as entity id" || return 1
   rm -rf "$tmp"
 }
 
-run_test test_main_passes_full_merge_sha_as_entity_id
+run_test test_main_passes_owner_repo_pr_as_entity_id
 
 report_results

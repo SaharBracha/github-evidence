@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
 # Tests for scripts/build-markdown.sh: renders a single render-safe markdown
-# report from the unified git-commit predicate (plus subject for PR identity).
+# report from the unified github-pull-request predicate (plus subject for PR identity).
 # The report is attached via `jf evd create --markdown`.
 set -uo pipefail
 
@@ -32,15 +32,15 @@ assert_render_safe() {
   fi
 }
 
-test_git_commit_markdown_both_sections() {
+test_git_pull_request_markdown_both_sections() {
   local pred subj md
   pred="${WORK}/pred.json"; subj="${WORK}/subj.json"; md="${WORK}/report.md"
 
   cat > "$pred" <<'JSON'
 {
   "schema_version": "1.0.0",
-  "subject_type": "GitCommit",
-  "predicate_type": "https://jfrog.com/evidence/git-commit/v1",
+  "subject_type": "GithubPullRequest",
+  "predicate_type": "https://jfrog.com/evidence/github-pull-request/v1",
   "pull_request_merge": {
     "merge": {
       "merge_commit_sha": "ed0be7a1",
@@ -94,7 +94,7 @@ JSON
     "${REPO_ROOT}/scripts/build-markdown.sh" || return 1
 
   local out; out="$(cat "$md")"
-  assert_contains "$out" "# Git Commit Evidence Report" "top-level title" || return 1
+  assert_contains "$out" "# Github Pull Request Evidence Report" "top-level title" || return 1
 
   # Pull Request Merge section
   assert_contains "$out" "# Pull Request Merge" "PR section heading" || return 1
@@ -124,7 +124,7 @@ JSON
 }
 
 # Empty rulesets with a 403 raw-snapshot status must show the reason, not a bare table.
-test_git_commit_markdown_ruleset_unavailable() {
+test_git_pull_request_markdown_ruleset_unavailable() {
   local pred md
   pred="${WORK}/pred-unavail.json"; md="${WORK}/unavail.md"
 
@@ -162,7 +162,7 @@ JSON
 
 # A branch name containing a pipe must be escaped so it cannot break out of the
 # markdown table column (attacker-influenceable ref names).
-test_git_commit_markdown_escapes_pipe() {
+test_git_pull_request_markdown_escapes_pipe() {
   local pred md
   pred="${WORK}/pred-pipe.json"; md="${WORK}/pipe.md"
 
@@ -201,8 +201,8 @@ JSON
   fi
 }
 
-run_test test_git_commit_markdown_both_sections
-run_test test_git_commit_markdown_ruleset_unavailable
-run_test test_git_commit_markdown_escapes_pipe
+run_test test_git_pull_request_markdown_both_sections
+run_test test_git_pull_request_markdown_ruleset_unavailable
+run_test test_git_pull_request_markdown_escapes_pipe
 
 report_results

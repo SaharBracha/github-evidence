@@ -27,12 +27,12 @@ review-and-merge controls into enforceable, auditable release policy.
 ## What you get
 
 For every merged pull request, the action produces **one** signed evidence named
-`git-commit` attached to the merge commit entity (`type=gitCommit`,
-`id=<full merge SHA>`). The single predicate
+`github-pull-request` attached to a `githubPullRequest` entity whose id is the
+`{owner}-{repo}-{prID}` identity. The single predicate
 carries two sections under separate root keys — `branch_protection` and
 `pull_request_merge` — so all the governance context for a merge travels as one
 attachment. It includes a **signed JSON predicate** (machine-readable, conforming
-to the published [`git-commit.json`](predicates/git-commit.json) schema) and a
+to the published [`github-pull-request.json`](predicates/github-pull-request.json) schema) and a
 **human-readable report** you can open directly in the JFrog evidence **Content**
 tab.
 
@@ -43,7 +43,7 @@ Everything is **read-only** against GitHub, and secret *values* are never fetche
 A normalized snapshot of the repository's protected branches, rulesets, and
 CODEOWNERS enforcement at merge time — proof of how the repo was governed when
 the change landed. Lives under the predicate's `branch_protection` key (see the
-[`git-commit.json`](predicates/git-commit.json) schema).
+[`github-pull-request.json`](predicates/github-pull-request.json) schema).
 
 Example `branch_protection` section (abbreviated):
 
@@ -100,7 +100,7 @@ Who approved the PR, what commits it put on the target branch, who authored them
 and each commit's cryptographic-signature verification status (`commit_signatures`
 plus an `all_commits_verified` summary). Lives under the predicate's
 `pull_request_merge` key (see the
-[`git-commit.json`](predicates/git-commit.json) schema).
+[`github-pull-request.json`](predicates/github-pull-request.json) schema).
 
 Identity fields come straight from what GitHub attests, so each side is partial:
 a commit carries the author's email but resolves a `login` only when that email
@@ -154,12 +154,13 @@ Once the action runs, the signed evidence lives in your JFrog project — you do
 **not** need JFrog AppTrust to produce or store it.
 
 **Where it lives.** Each run attaches signed evidence to a non-artifact
-**entity** whose type is `gitCommit` and whose id is the full merge commit SHA.
+**entity** whose type is `githubPullRequest` and whose id is the
+`{owner}-{repo}-{prID}` identity.
 With project scope, Evidence stores it under the conventional repository
-`{jf_project}-gitCommit-entity` (path under `.entities/gitCommit/...`).
+`{jf_project}-githubPullRequest-entity` (path under `.entities/githubPullRequest/...`).
 
-**How to retrieve and verify.** List evidence for the commit with the Evidence
-REST API (`GET /evidence/api/v1/entity/gitCommit/{mergeCommitSha}?project-key=...`)
+**How to retrieve and verify.** List evidence with the Evidence REST API
+(`GET /evidence/api/v1/entity/githubPullRequest/{owner}-{repo}-{prID}?project-key=...`)
 or GraphQL `hasEntityWith`, and open the human-readable **Content** report in the
 JFrog UI. You can also cryptographically verify evidence with the JFrog CLI
 (`jf evidence verify`).
@@ -178,7 +179,7 @@ exchange, and project selection) in its own step. The prerequisites are the
 platform-side setup:
 
 - A **JFrog project** (you'll reference its project key).
-- An **entity repository** named `{jf_project}-gitCommit-entity` in Artifactory
+- An **entity repository** named `{jf_project}-githubPullRequest-entity` in Artifactory
   (Evidence does not create it automatically). The OIDC identity must be able to
   annotate that repository.
 - A platform Evidence service that includes **non-artifact entity APIs**
@@ -226,7 +227,7 @@ jobs:
 The `branches: [main]` filter scopes the workflow to pull requests targeting
 `main`, and the `closed` trigger plus the `if: ...merged == true` guard limits the
 job to merges — so closed-unmerged PRs produce nothing. Each merge into `main`
-then produces one combined `git-commit` evidence covering both the branch
+then produces one combined `github-pull-request` evidence covering both the branch
 protection and the merge. Add more branches to the list to cover additional
 release branches. A runnable copy lives in
 [`examples/git-evidence.yml`](examples/git-evidence.yml).

@@ -361,7 +361,7 @@
 			"ruleset_count": 0
 		}
 	},
-	"predicate_type": "https://jfrog.com/evidence/git-commit/v1",
+	"predicate_type": "https://jfrog.com/evidence/github-pull-request/v1",
 	"pull_request_merge": {
 		"all_commits_verified": true,
 		"approvers": [
@@ -406,5 +406,5 @@
 		}
 	},
 	"schema_version": "1.0.0",
-	"subject_type": "GitCommit"
+	"subject_type": "GithubPullRequest"
 }
