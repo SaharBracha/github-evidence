@@ -11,7 +11,7 @@
 # "{owner}-{repo}-{prID}" identity.
 #
 # Required env: GITHUB_REPOSITORY, PR_NUMBER, plus everything the
-#   collector / build / create scripts require (GITHUB_TOKEN, PROJECT_KEY,
+#   collector / build / create scripts require (GITHUB_TOKEN,
 #   EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS, ...).
 set -euo pipefail
 

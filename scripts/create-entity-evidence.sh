@@ -4,8 +4,8 @@
 # prepare + entity create APIs. Assumes the JFrog CLI is already configured
 # (setup-jfrog-cli / jf c) so `jf api` can authenticate against the platform.
 #
-# Required env: PREDICATE_FILE, PREDICATE_TYPE, PROJECT_KEY, ENTITY_TYPE,
-#               ENTITY_ID, EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
+# Required env: PREDICATE_FILE, PREDICATE_TYPE, ENTITY_TYPE, ENTITY_ID,
+#               EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
 # Optional env: MARKDOWN_FILE (human-readable report included in prepare),
 #               PROVIDER_ID (default github-actions).
 set -euo pipefail
@@ -17,7 +17,6 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 : "${PREDICATE_FILE:?PREDICATE_FILE must be set}"
 : "${PREDICATE_TYPE:?PREDICATE_TYPE must be set}"
-: "${PROJECT_KEY:?PROJECT_KEY must be set}"
 : "${ENTITY_TYPE:?ENTITY_TYPE must be set}"
 : "${ENTITY_ID:?ENTITY_ID must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
@@ -45,7 +44,6 @@ jq_args=(
   --slurpfile predicate "$PREDICATE_FILE"
   --arg predicate_type "$PREDICATE_TYPE"
   --arg provider_id "$PROVIDER_ID"
-  --arg project_key "$PROJECT_KEY"
   --arg entity_type "$ENTITY_TYPE"
   --arg entity_id "$ENTITY_ID"
 )
@@ -53,7 +51,6 @@ jq_filter='{
   predicate: $predicate[0],
   predicate_type: $predicate_type,
   provider_id: $provider_id,
-  project_key: $project_key,
   subject: {
     subject_type: "entity",
     entity_type: $entity_type,
@@ -73,7 +70,7 @@ fi
 
 jq "${jq_args[@]}" "$jq_filter" > prepare-req.json
 
-echo "Preparing evidence for entity ${ENTITY_TYPE}/${ENTITY_ID} (project ${PROJECT_KEY})" >&2
+echo "Preparing evidence for entity ${ENTITY_TYPE}/${ENTITY_ID}" >&2
 # jf api prints HTTP status on stderr; body on stdout. Non-2xx exits 1.
 if ! jf api /evidence/api/v1/evidence/prepare \
   -X POST \
