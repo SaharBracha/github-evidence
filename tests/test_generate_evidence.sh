@@ -13,7 +13,6 @@ source "${TESTS_DIR}/lib/test_helpers.sh"
 
 export GITHUB_REPOSITORY="acme/widget"
 export PR_NUMBER="123"
-export PROJECT_KEY="demo"
 export EVIDENCE_SIGNING_KEY="unused-in-stub"
 export EVIDENCE_KEY_ALIAS="unused-in-stub"
 

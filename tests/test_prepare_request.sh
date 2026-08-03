@@ -17,7 +17,6 @@ build_prepare_req() {
     --slurpfile predicate "$predicate_file"
     --arg predicate_type "https://jfrog.com/evidence/github-pull-request/v1"
     --arg provider_id "github-actions"
-    --arg project_key "demo"
     --arg entity_type "githubPullRequest"
     --arg entity_id "abcdef1234567890abcdef1234567890abcdef12"
   )
@@ -25,7 +24,6 @@ build_prepare_req() {
     predicate: $predicate[0],
     predicate_type: $predicate_type,
     provider_id: $provider_id,
-    project_key: $project_key,
     subject: {
       subject_type: "entity",
       entity_type: $entity_type,
@@ -45,7 +43,7 @@ test_prepare_request_entity_subject() {
   printf '%s\n' '{"pull_request_merge":{},"branch_protection":{}}' > "${tmp}/predicate.json"
   req="$(build_prepare_req "${tmp}/predicate.json")"
   assert_json_equal \
-    '{"predicate":{"branch_protection":{},"pull_request_merge":{}},"predicate_type":"https://jfrog.com/evidence/github-pull-request/v1","project_key":"demo","provider_id":"github-actions","subject":{"entity_id":"abcdef1234567890abcdef1234567890abcdef12","entity_type":"githubPullRequest","subject_type":"entity"}}' \
+    '{"predicate":{"branch_protection":{},"pull_request_merge":{}},"predicate_type":"https://jfrog.com/evidence/github-pull-request/v1","provider_id":"github-actions","subject":{"entity_id":"abcdef1234567890abcdef1234567890abcdef12","entity_type":"githubPullRequest","subject_type":"entity"}}' \
     "$req" \
     "prepare body without markdown" || { rm -rf "$tmp"; return 1; }
   rm -rf "$tmp"
