@@ -72,10 +72,11 @@ jq "${jq_args[@]}" "$jq_filter" > prepare-req.json
 
 echo "Preparing evidence for entity ${ENTITY_TYPE}/${ENTITY_ID}" >&2
 # jf api prints HTTP status on stderr; body on stdout. Non-2xx exits 1.
-if ! jf api /evidence/api/v1/evidence/prepare \
+if ! jf api \
   -X POST \
   -H "Content-Type: application/json" \
   --input prepare-req.json \
+  /evidence/api/v1/evidence/prepare \
   > prepare-resp.json; then
   echo "::error::evidence prepare failed" >&2
   cat prepare-resp.json >&2 || true
@@ -96,10 +97,11 @@ node "${SCRIPT_DIR}/lib/sign-dsse.mjs" \
   > envelope.json
 
 echo "Creating evidence at ${post_url}" >&2
-if ! jf api "$post_url" \
+if ! jf api \
   -X POST \
   -H "Content-Type: application/json" \
   --input envelope.json \
+  "$post_url" \
   > create-resp.json; then
   echo "::error::evidence create failed" >&2
   cat create-resp.json >&2 || true
