@@ -46,6 +46,7 @@ runs:
       env:
         JF_URL: ${{ env.JF_URL }}
       with:
+        version: latest
         oidc-provider-name: ${{ inputs.oidc_provider_name }}
 
     - name: Generate git evidence
