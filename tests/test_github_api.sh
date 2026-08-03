@@ -105,6 +105,58 @@ test_pagination_partial_failure_keeps_first_page_data() {
   assert_equal "100" "$(printf '%s' "$section" | jq -r '.data | length')" "should keep the 100 items collected before the failure"
 }
 
+test_resolve_pr_number_uses_env_when_set() {
+  local out
+  (
+    export PR_NUMBER="7"
+    export GH_OWNER="acme" GH_REPO="widget" GITHUB_SHA="abc123"
+    export MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/resolve-pr-number.json"
+    resolve_pr_number
+    printf '%s' "$PR_NUMBER"
+  ) > /tmp/pr_env_out
+  out="$(cat /tmp/pr_env_out)"
+  rm -f /tmp/pr_env_out
+  assert_equal "7" "$out" "should not overwrite an already-set PR_NUMBER"
+}
+
+test_resolve_pr_number_from_merge_commit() {
+  local out
+  (
+    unset PR_NUMBER
+    export GH_OWNER="acme" GH_REPO="widget" GITHUB_SHA="abc123"
+    export MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/resolve-pr-number.json"
+    resolve_pr_number
+    printf '%s' "$PR_NUMBER"
+  ) > /tmp/pr_env_out
+  out="$(cat /tmp/pr_env_out)"
+  rm -f /tmp/pr_env_out
+  assert_equal "42" "$out" "should resolve PR_NUMBER from the commits/{sha}/pulls API"
+}
+
+test_resolve_pr_number_ignores_unmerged_prs() {
+  local status
+  (
+    unset PR_NUMBER
+    export GH_OWNER="acme" GH_REPO="widget" GITHUB_SHA="open123"
+    export MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/resolve-pr-number.json"
+    resolve_pr_number 2>/dev/null
+  )
+  status=$?
+  assert_equal "1" "$status" "should exit 1 when the associated PR is not merged"
+}
+
+test_resolve_pr_number_no_associated_pr_exits() {
+  local status
+  (
+    unset PR_NUMBER
+    export GH_OWNER="acme" GH_REPO="widget" GITHUB_SHA="dead123"
+    export MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/resolve-pr-number.json"
+    resolve_pr_number 2>/dev/null
+  )
+  status=$?
+  assert_equal "1" "$status" "should exit 1 when no PR is associated with the commit"
+}
+
 run_test test_redact_strips_nested_secret_like_keys
 run_test test_section_from_result_success
 run_test test_section_from_result_not_found_is_unavailable
@@ -115,5 +167,9 @@ run_test test_section_from_result_server_error_is_error
 run_test test_pagination_accumulates_bare_array_across_pages
 run_test test_pagination_follows_total_count_for_wrapped_endpoints
 run_test test_pagination_partial_failure_keeps_first_page_data
+run_test test_resolve_pr_number_uses_env_when_set
+run_test test_resolve_pr_number_from_merge_commit
+run_test test_resolve_pr_number_ignores_unmerged_prs
+run_test test_resolve_pr_number_no_associated_pr_exits
 
 report_results

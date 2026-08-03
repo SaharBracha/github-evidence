@@ -388,3 +388,28 @@ gh_get_required() {
 
   printf '%s' "$result" | jq -c '.body'
 }
+
+# Resolve PR_NUMBER from GITHUB_SHA when the caller did not supply one. The
+# action fires on both pull_request (where the event payload carries the PR
+# number) and push (where it does not); on a merge-to-main push we still need
+# to identify which pull request produced the merge commit. Queries
+# /repos/{owner}/{repo}/commits/{sha}/pulls and takes the first merged entry.
+# Exits 1 when no merged PR is associated with the commit.
+resolve_pr_number() {
+  if [[ -n "${PR_NUMBER:-}" ]]; then
+    return
+  fi
+  : "${GITHUB_SHA:?GITHUB_SHA must be set to resolve PR_NUMBER from the merge commit}"
+  : "${GH_OWNER:?GH_OWNER must be set (call resolve_owner_repo first)}"
+  : "${GH_REPO:?GH_REPO must be set (call resolve_owner_repo first)}"
+
+  local body
+  body="$(gh_get_required "/repos/${GH_OWNER}/${GH_REPO}/commits/${GITHUB_SHA}/pulls")"
+  PR_NUMBER="$(printf '%s' "$body" | jq -r 'map(select(.merged_at != null)) | .[0].number // empty')"
+
+  if [[ -z "$PR_NUMBER" ]]; then
+    echo "::error::No merged pull request found for commit ${GITHUB_SHA}" >&2
+    exit 1
+  fi
+  export PR_NUMBER
+}

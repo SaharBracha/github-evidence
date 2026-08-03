@@ -10,17 +10,20 @@
 # The evidence is attached to a githubPullRequest entity whose id is the readable
 # "{owner}-{repo}-{prID}" identity.
 #
-# Required env: GITHUB_REPOSITORY, PR_NUMBER, plus everything the
-#   collector / build / create scripts require (GITHUB_TOKEN,
-#   EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS, ...).
+# Required env: GITHUB_REPOSITORY, GITHUB_SHA (or PR_NUMBER), plus everything
+#   the collector / build / create scripts require (GITHUB_TOKEN,
+#   EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS, ...). When PR_NUMBER is not set
+#   (e.g. push-to-main runs), it is resolved from GITHUB_SHA via the GitHub API.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 # shellcheck source=./lib/common.sh
 source "${SCRIPT_DIR}/lib/common.sh"
+# shellcheck source=./lib/github-api.sh
+source "${SCRIPT_DIR}/lib/github-api.sh"
 
-: "${PR_NUMBER:?PR_NUMBER must be set}"
 resolve_owner_repo
+resolve_pr_number
 
 PREDICATE_TYPE="https://jfrog.com/evidence/github-pull-request/v1"
 ENTITY_TYPE="githubPullRequest"
