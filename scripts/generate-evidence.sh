@@ -25,7 +25,7 @@ source "${SCRIPT_DIR}/lib/github-api.sh"
 resolve_owner_repo
 resolve_pr_number
 
-PREDICATE_TYPE="https://jfrog.com/evidence/github-pull-request/v1"
+PREDICATE_TYPE="https://jfrog.com/evidence/pull-request-merge/v1"
 ENTITY_TYPE="githubPullRequest"
 ENTITY_ID="${GH_OWNER}-${GH_REPO}-${PR_NUMBER}"
 

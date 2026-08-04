@@ -7,7 +7,7 @@
 # overridable via PREDICATE_OUT / SUBJECT_OUT).
 #
 # Required env: PR_RAW_SNAPSHOT_FILE, BP_RAW_SNAPSHOT_FILE.
-# Optional env: PREDICATE_TYPE (default github-pull-request/v1), PREDICATE_OUT,
+# Optional env: PREDICATE_TYPE (default pull-request-merge/v1), PREDICATE_OUT,
 #   SUBJECT_OUT, COLLECTOR_VERSION, WORKFLOW_RUN_URL, GITHUB_SERVER_URL,
 #   GITHUB_REPOSITORY, GITHUB_RUN_ID.
 set -euo pipefail
@@ -21,7 +21,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 PREDICATE_OUT="${PREDICATE_OUT:-predicate.json}"
 SUBJECT_OUT="${SUBJECT_OUT:-subject.json}"
 
-PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/github-pull-request/v1}"
+PREDICATE_TYPE="${PREDICATE_TYPE:-https://jfrog.com/evidence/pull-request-merge/v1}"
 COLLECTOR_VERSION="${COLLECTOR_VERSION:-git-evidence}"
 API_HOST="https://api.github.com"
 SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"

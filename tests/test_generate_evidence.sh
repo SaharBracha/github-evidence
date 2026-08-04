@@ -58,7 +58,7 @@ SCRIPT_DIR="${REPO_ROOT}/scripts"
 source "\${SCRIPT_DIR}/lib/common.sh"
 : "\${PR_NUMBER:?}"
 resolve_owner_repo
-PREDICATE_TYPE="https://jfrog.com/evidence/github-pull-request/v1"
+PREDICATE_TYPE="https://jfrog.com/evidence/pull-request-merge/v1"
 ENTITY_TYPE="githubPullRequest"
 ENTITY_ID="\${GH_OWNER}-\${GH_REPO}-\${PR_NUMBER}"
 main() {

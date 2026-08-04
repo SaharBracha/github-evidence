@@ -50,7 +50,7 @@ if [[ ! -f "$PREDICATE_FILE" ]]; then
   exit 1
 fi
 
-PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/github-pull-request/v1"' "$PREDICATE_FILE")}"
+PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/pull-request-merge/v1"' "$PREDICATE_FILE")}"
 # Default id: readable "{owner}-{repo}-{prID}" from the fixture repository.
 if [[ -z "${ENTITY_ID:-}" ]]; then
   owner="$(jq -r '.branch_protection.repository.owner // empty' "$PREDICATE_FILE")"
