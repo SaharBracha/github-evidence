@@ -40,7 +40,7 @@ test_git_pull_request_markdown_both_sections() {
 {
   "schema_version": "1.0.0",
   "subject_type": "GithubPullRequest",
-  "predicate_type": "https://jfrog.com/evidence/github-pull-request/v1",
+  "predicate_type": "https://jfrog.com/evidence/pull-request-merge/v1",
   "pull_request_merge": {
     "merge": {
       "merge_commit_sha": "ed0be7a1",

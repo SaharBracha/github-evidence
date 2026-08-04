@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://jfrog.com/evidence/github-pull-request/v1",
+  "$id": "https://jfrog.com/evidence/pull-request-merge/v1",
   "title": "Github Pull Request Evidence",
   "description": "The unified github-pull-request predicate created by the jfrog/git-evidence action. Carries the merged pull request and the repository branch-protection settings under separate root keys.",
   "type": "object",
@@ -20,7 +20,7 @@
       "const": "GithubPullRequest"
     },
     "predicate_type": {
-      "const": "https://jfrog.com/evidence/github-pull-request/v1"
+      "const": "https://jfrog.com/evidence/pull-request-merge/v1"
     },
     "pull_request_merge": {
       "type": "object",

@@ -39,7 +39,7 @@ test_git_pull_request_predicate_and_subject() {
   # Top-level envelope
   assert_equal "1.0.0" "$(jq -r '.schema_version' "$pred")" "top-level schema_version" || return 1
   assert_equal "GithubPullRequest" "$(jq -r '.subject_type' "$pred")" "top-level subject_type" || return 1
-  assert_equal "https://jfrog.com/evidence/github-pull-request/v1" "$(jq -r '.predicate_type' "$pred")" "top-level predicate_type" || return 1
+  assert_equal "https://jfrog.com/evidence/pull-request-merge/v1" "$(jq -r '.predicate_type' "$pred")" "top-level predicate_type" || return 1
 
   # Inner envelopes are stripped from both sections.
   assert_equal "null" "$(jq -r '.pull_request_merge.schema_version // "null"' "$pred")" "no inner PR schema_version" || return 1

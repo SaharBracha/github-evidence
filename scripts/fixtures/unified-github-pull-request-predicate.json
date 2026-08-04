@@ -361,7 +361,7 @@
 			"ruleset_count": 0
 		}
 	},
-	"predicate_type": "https://jfrog.com/evidence/github-pull-request/v1",
+	"predicate_type": "https://jfrog.com/evidence/pull-request-merge/v1",
 	"pull_request_merge": {
 		"all_commits_verified": true,
 		"approvers": [
