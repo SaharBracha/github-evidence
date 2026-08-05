@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jfrog.com/evidence/branch-protection-rule/v1",
+  "title": "GitHub Branch Protection Rule Evidence",
+  "description": "The branch-protection-rule predicate created by the jfrog/git-evidence action on branch_protection_rule webhook events (created, edited, deleted).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "subject_type",
+    "predicate_type",
+    "branch_protection_rule"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "subject_type": { "const": "GithubBranchProtectionRule" },
+    "predicate_type": { "const": "https://jfrog.com/evidence/branch-protection-rule/v1" },
+    "branch_protection_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event", "repository_snapshot", "collection"],
+      "properties": {
+        "event": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["action", "rule"],
+          "properties": {
+            "action": { "type": "string", "enum": ["created", "edited", "deleted"] },
+            "rule": { "type": ["object", "null"] },
+            "changes": { "type": ["object", "null"] },
+            "sender": { "type": ["object", "null"] },
+            "repository": { "type": ["object", "null"] }
+          }
+        },
+        "app_key": { "type": ["string", "null"] },
+        "repository_snapshot": { "type": "object" },
+        "collection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["collected_at", "workflow_run_url"],
+          "properties": {
+            "collected_at": { "type": "string" },
+            "workflow_run_url": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

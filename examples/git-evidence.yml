@@ -1,15 +1,20 @@
 # Example: create signed JFrog Traceability.
 # Copy this file into your repository's .github/workflows/ directory.
 #
-# Runs only when a pull request is merged into main, and records one
-# github-pull-request evidence for that merge. Add more branches to the
-# `branches` list to cover additional release branches.
+# Runs on two triggers:
+#   * pull_request closed (merged into main) -> one github-pull-request evidence
+#     for that merge
+#   * branch_protection_rule created/edited/deleted -> one
+#     branch-protection-rule evidence on the JFrog application identified by
+#     the APP_KEY repo variable
 name: JFrog Traceability
 
 on:
   pull_request:
     types: [closed]
     branches: [main]
+  branch_protection_rule:
+    types: [created, edited, deleted]
 
 permissions:
   contents: read
@@ -18,8 +23,12 @@ permissions:
 
 jobs:
   git-evidence:
-    if: github.event.pull_request.merged == true
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      github.event_name == 'branch_protection_rule'
     runs-on: ubuntu-latest
+    env:
+      APP_KEY: ${{ vars.APP_KEY }}
     steps:
       - uses: actions/checkout@v4
 

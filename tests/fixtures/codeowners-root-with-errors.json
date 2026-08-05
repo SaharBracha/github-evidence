@@ -1,0 +1,17 @@
+[
+  {"path": "/repos/acme/widget/contents/.github/CODEOWNERS", "status": 404, "body": {"message": "Not Found"}},
+  {
+    "path": "/repos/acme/widget/contents/CODEOWNERS",
+    "status": 200,
+    "body": "# root codeowners\n***/*.rb @monalisa\n*.txt docs@\n"
+  },
+  {
+    "path": "/repos/acme/widget/codeowners/errors",
+    "status": 200,
+    "body": {
+      "errors": [
+        {"line": 2, "column": 1, "kind": "Invalid pattern", "source": "***/*.rb @monalisa", "message": "Invalid pattern on line 2", "path": "CODEOWNERS"}
+      ]
+    }
+  }
+]

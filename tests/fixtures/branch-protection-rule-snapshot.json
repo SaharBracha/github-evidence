@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-08-05T10:00:00.000Z",
+  "repository": {"owner": "acme", "name": "widget", "full_name": "acme/widget"},
+  "sections": {
+    "branch_protection": {
+      "protected_branches": {"status": "collected", "data": [{"name": "main"}]},
+      "branches": {"main": {"protection": {"status": "collected", "data": {}}, "effective_rules": {"status": "collected", "data": []}}},
+      "rulesets": {"status": "collected", "data": []},
+      "ruleset_details": {}
+    },
+    "code_owners": {"resolved_path": ".github/CODEOWNERS", "owner_rules": [{"pattern": "*", "owners": ["@team"]}], "validation_errors": {"status": "collected", "data": {"errors": []}}},
+    "code_owner_enforcement": {
+      "has_codeowners_file": true,
+      "owner_rule_count": 1,
+      "codeowners_validation_errors_present": false,
+      "per_branch": []
+    },
+    "repository_access": {}
+  }
+}

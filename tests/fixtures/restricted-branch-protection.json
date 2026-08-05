@@ -1,0 +1,24 @@
+[
+  {
+    "path": "/repos/acme/widget/branches",
+    "query": {"page": "1"},
+    "status": 200,
+    "body": [{"name": "main", "protected": true}]
+  },
+  {
+    "path": "/repos/acme/widget/branches/main/protection",
+    "status": 403,
+    "body": {"message": "Resource not accessible by integration"}
+  },
+  {
+    "path": "/repos/acme/widget/rules/branches/main",
+    "status": 200,
+    "body": [{"type": "pull_request", "parameters": {"require_code_owner_review": true}}]
+  },
+  {
+    "path": "/repos/acme/widget/rulesets",
+    "query": {"page": "1"},
+    "status": 404,
+    "body": {"message": "Not Found"}
+  }
+]

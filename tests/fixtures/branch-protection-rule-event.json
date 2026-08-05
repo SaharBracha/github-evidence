@@ -1,0 +1,24 @@
+{
+  "action": "edited",
+  "rule": {
+    "id": 12345,
+    "name": "main",
+    "required_approving_review_count": 2,
+    "dismiss_stale_reviews_on_push": true,
+    "require_code_owner_review": true,
+    "strict_required_status_checks_policy": false,
+    "signature_requirement_enforcement_level": "off"
+  },
+  "changes": {
+    "required_approving_review_count": { "from": 1, "to": 2 }
+  },
+  "sender": {
+    "login": "octocat",
+    "id": 1
+  },
+  "repository": {
+    "id": 111,
+    "full_name": "acme/widget",
+    "default_branch": "main"
+  }
+}

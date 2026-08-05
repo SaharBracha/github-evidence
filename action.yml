@@ -1,8 +1,10 @@
 name: 'JFrog Traceability'
 description: >-
-  Collect Git evidence and attach it as signed JFrog evidence on the merge
-  commit entity. On a merged pull request, records one github-pull-request
-  evidence covering the merge's approvers, commits, and committers.
+  Collect Git evidence and attach it as signed JFrog evidence. On a merged
+  pull request, records one github-pull-request evidence covering the merge's
+  approvers, commits, and committers. On a branch_protection_rule event
+  (created/edited/deleted), records one branch-protection-rule evidence on
+  the JFrog application entity identified by the APP_KEY repo variable.
 author: JFrog
 branding:
   icon: shield
@@ -49,6 +51,7 @@ runs:
         oidc-provider-name: ${{ inputs.oidc_provider_name }}
 
     - name: Generate git evidence
+      if: github.event_name == 'pull_request'
       shell: bash
       env:
         AP: ${{ github.action_path }}
@@ -60,3 +63,17 @@ runs:
       run: |
         set -euo pipefail
         bash "$AP/scripts/generate-evidence.sh"
+
+    - name: Generate branch-protection-rule evidence
+      if: github.event_name == 'branch_protection_rule'
+      shell: bash
+      env:
+        AP: ${{ github.action_path }}
+        GITHUB_TOKEN: ${{ github.token }}
+        APP_KEY: ${{ env.APP_KEY }}
+        COLLECTOR_VERSION: branch-protection-rule
+        EVIDENCE_SIGNING_KEY: ${{ inputs.evidence_signing_key }}
+        EVIDENCE_KEY_ALIAS: ${{ inputs.evidence_key_alias }}
+      run: |
+        set -euo pipefail
+        bash "$AP/scripts/branch-protection-rule/generate-evidence.sh"

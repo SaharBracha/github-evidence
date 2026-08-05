@@ -7,7 +7,8 @@
 # Required env: PREDICATE_FILE, PREDICATE_TYPE, ENTITY_TYPE, ENTITY_ID,
 #               EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
 # Optional env: MARKDOWN_FILE (human-readable report included in prepare),
-#               PROVIDER_ID (default github-actions).
+#               PROVIDER_ID (default github-actions),
+#               APP_KEY (appended as ?app_key=<key> on the create POST).
 set -euo pipefail
 # This script writes the private signing key to disk. Force xtrace off so an
 # inherited `set -x` or RUNNER_DEBUG=1 can never echo the PEM into the run log.
@@ -96,12 +97,23 @@ node "${SCRIPT_DIR}/lib/sign-dsse.mjs" \
   --key-id "$EVIDENCE_KEY_ALIAS" \
   > envelope.json
 
-echo "Creating evidence at ${post_url}" >&2
+create_url="$post_url"
+if [[ -n "${APP_KEY:-}" ]]; then
+  # Scope the create call to a JFrog application. `prepare` doesn't know about
+  # the app, so app_key is only appended on the create POST.
+  if [[ "$create_url" == *\?* ]]; then
+    create_url="${create_url}&app_key=${APP_KEY}"
+  else
+    create_url="${create_url}?app_key=${APP_KEY}"
+  fi
+fi
+
+echo "Creating evidence at ${create_url}" >&2
 if ! jf api \
   -X POST \
   -H "Content-Type: application/json" \
   --input envelope.json \
-  "$post_url" \
+  "$create_url" \
   > create-resp.json; then
   echo "::error::evidence create failed" >&2
   cat create-resp.json >&2 || true
