@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Renders a human-readable, per-run markdown report from the unified github-pull-request
+# Renders a human-readable, per-run markdown report from the github-pull-request
 # predicate document. The report is included in the Evidence prepare request
 # (`markdown`) so the evidence is legible in the JFrog UI.
 #
@@ -22,11 +22,9 @@ MARKDOWN_OUT="${MARKDOWN_OUT:-markdown.md}"
 #   safe  strip the " < > characters the JFrog markdown viewer escapes, and
 #         escape pipe so collected values can't break out of a table cell.
 #   dash  render an em dash for empty/null instead of a blank cell.
-#   yn    boolean -> yes/no.
 MD_HELPERS='
   def safe: if . == null then "" else (tostring | gsub("[<>\"]"; "") | gsub("\\|"; "\\|")) end;
   def dash: if . == null or . == "" then "—" else (. | safe) end;
-  def yn: if . then "yes" else "no" end;
 '
 
 subject_json='{}'
@@ -38,12 +36,9 @@ jq -r --argjson subj "$subject_json" "$MD_HELPERS"'
   def repo_slug: ($subj.repo_url // "") | safe | (split("/") | if length >= 2 then .[-2:] | join("/") else (. | join("/")) end);
 
   .pull_request_merge as $pm
-  | .branch_protection as $bp
-  | ($bp.raw_snapshot.sections.branch_protection.rulesets // {}) as $rs_raw
 
   | "# Github Pull Request Evidence Report\n"
 
-  + "\n# Pull Request Merge\n"
   + "\n## Summary\n"
   + "- **Repository:** " + (repo_slug | if . == "" then "—" else . end) + "\n"
   + "- **Pull request:** #" + (($subj.pr_number // "—") | safe) + "\n"
@@ -86,40 +81,6 @@ jq -r --argjson subj "$subject_json" "$MD_HELPERS"'
            + (.reason | dash) + " | "
            + (.signer_login | dash) + " |"
          ) | join("\n")) + "\n" end)
-
-  + "\n# Branch Protection\n"
-  + "\n## Summary\n"
-  + "- **Repository:** [" + ($bp.repository.full_name | dash) + "](" + (($bp.repository.url // "") | safe) + ")\n"
-  + "- **Protected branches:** " + (($bp.summary.protected_branch_count // 0) | tostring) + "\n"
-  + "- **Rulesets:** " + (($bp.summary.ruleset_count // 0) | tostring) + "\n"
-  + "- **CODEOWNERS file:** " + (($bp.summary.has_codeowners_file // false) | yn) + "\n"
-  + "- **CODEOWNERS rules:** " + (($bp.summary.codeowners_rule_count // 0) | tostring) + "\n"
-  + "- **Collected at:** " + ($bp.collection.collected_at | dash) + "\n"
-  + "- **Workflow run:** " + ($bp.collection.workflow_run_url | dash) + "\n"
-  + "\n## Branches\n\n"
-  + (if (($bp.branches // []) | length) == 0 then "_No protected branches configured._\n"
-     else "| Branch | Reviews Required | Approvals | Code-owner Review | Status Checks | Enforce Admins | Force Pushes |\n"
-       + "|---|---|---|---|---|---|---|\n"
-       + (($bp.branches // []) | map(
-           "| `" + (.name | safe) + "` | "
-           + ((.required_pull_request_reviews.required // false) | if . then "yes" else "no" end) + " | "
-           + ((.required_pull_request_reviews.required_approving_review_count // 0) | tostring) + " | "
-           + ((.required_pull_request_reviews.require_code_owner_reviews // false) | yn) + " | "
-           + (((.required_status_checks.checks // []) | map(safe) | join(", ")) | if . == "" then "—" else . end)
-           + (if (.required_status_checks.strict // false) then " (strict)" else "" end) + " | "
-           + ((.enforce_admins // false) | yn) + " | "
-           + ((.allow_force_pushes // false) | if . then "allowed" else "blocked" end) + " |"
-         ) | join("\n")) + "\n" end)
-  + "\n## Rulesets\n\n"
-  + (if (($bp.rulesets // []) | length) > 0 then
-       "| Name | Enforcement | Target | Rules |\n|---|---|---|---|\n"
-       + (($bp.rulesets // []) | map(
-           "| " + (.name | dash) + " | " + (.enforcement | dash) + " | " + (.target | dash)
-           + " | " + (((.rules // []) | map(safe) | join(", ")) | if . == "" then "—" else . end) + " |"
-         ) | join("\n")) + "\n"
-     elif ($rs_raw.status // "") == "unavailable" then
-       "_Unavailable: " + (($rs_raw.message // "not accessible with this token") | safe) + "_\n"
-     else "_No rulesets configured._\n" end)
 ' "$PREDICATE_FILE" > "$MARKDOWN_OUT"
 
 echo "Wrote ${MARKDOWN_OUT}" >&2

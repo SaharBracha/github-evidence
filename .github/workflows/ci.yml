@@ -62,22 +62,3 @@ jobs:
       - name: Run fixture-driven test suites
         run: bash tests/run-tests.sh
 
-  smoke-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    env:
-      GITHUB_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Collect and verify this repository's own settings snapshot
-        run: |
-          set -euo pipefail
-          bash scripts/branch-protection/collect-settings-snapshot.sh > snapshot.json
-          # Print the collected snapshot so the run shows exactly what was
-          # collected (which sections are `collected` vs `unavailable`), then
-          # verify it is a genuine, well-formed snapshot of this repository.
-          jq . snapshot.json
-          bash tests/assert-snapshot.sh < snapshot.json

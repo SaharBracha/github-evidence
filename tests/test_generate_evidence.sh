@@ -26,10 +26,6 @@ test_main_passes_owner_repo_pr_as_entity_id() {
 #!/usr/bin/env bash
 echo '{"ok":true}'
 EOF
-    cat > stubs/collect-settings-snapshot.sh <<'EOF'
-#!/usr/bin/env bash
-echo '{"ok":true}'
-EOF
     cat > stubs/build-predicate.sh <<'EOF'
 #!/usr/bin/env bash
 echo '{}' > predicate.json
@@ -63,8 +59,7 @@ ENTITY_TYPE="githubPullRequest"
 ENTITY_ID="\${GH_OWNER}-\${GH_REPO}-\${PR_NUMBER}"
 main() {
   "${tmp}/stubs/collect-pr-merge.sh" > pr-raw.json
-  "${tmp}/stubs/collect-settings-snapshot.sh" > bp-raw.json
-  PR_RAW_SNAPSHOT_FILE=pr-raw.json BP_RAW_SNAPSHOT_FILE=bp-raw.json \\
+  PR_RAW_SNAPSHOT_FILE=pr-raw.json \\
     PREDICATE_TYPE="\$PREDICATE_TYPE" \\
     "${tmp}/stubs/build-predicate.sh"
   PREDICATE_FILE=predicate.json SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \\

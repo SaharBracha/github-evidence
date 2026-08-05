@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
 # Tests for scripts/build-markdown.sh: renders a single render-safe markdown
-# report from the unified github-pull-request predicate (plus subject for PR identity).
+# report from the github-pull-request predicate (plus subject for PR identity).
 # The report is attached via `jf evd create --markdown`.
 set -uo pipefail
 
@@ -32,7 +32,7 @@ assert_render_safe() {
   fi
 }
 
-test_git_pull_request_markdown_both_sections() {
+test_git_pull_request_markdown_renders_merge_section() {
   local pred subj md
   pred="${WORK}/pred.json"; subj="${WORK}/subj.json"; md="${WORK}/report.md"
 
@@ -65,23 +65,6 @@ test_git_pull_request_markdown_both_sections() {
       "collected_at": "2026-07-23T11:28:30.000Z",
       "workflow_run_url": "https://github.com/acme/widget/actions/runs/30003234739"
     }
-  },
-  "branch_protection": {
-    "repository": { "full_name": "acme/widget", "url": "https://github.com/acme/widget" },
-    "collection": { "collected_at": "2026-07-23T11:00:00Z", "workflow_run_url": "https://github.com/acme/widget/actions/runs/1" },
-    "summary": { "protected_branch_count": 1, "ruleset_count": 1, "has_codeowners_file": true, "codeowners_rule_count": 3 },
-    "branches": [
-      {
-        "name": "main",
-        "required_pull_request_reviews": { "required": true, "required_approving_review_count": 2, "require_code_owner_reviews": true },
-        "required_status_checks": { "strict": true, "checks": ["ci/build"] },
-        "enforce_admins": true,
-        "allow_force_pushes": false
-      }
-    ],
-    "rulesets": [
-      { "name": "protect-main", "enforcement": "active", "target": "branch", "rules": ["pull_request", "required_status_checks"] }
-    ]
   }
 }
 JSON
@@ -95,9 +78,6 @@ JSON
 
   local out; out="$(cat "$md")"
   assert_contains "$out" "# Github Pull Request Evidence Report" "top-level title" || return 1
-
-  # Pull Request Merge section
-  assert_contains "$out" "# Pull Request Merge" "PR section heading" || return 1
   assert_contains "$out" "**Repository:** acme/widget" "repository slug from subject" || return 1
   assert_contains "$out" "**Pull request:** #7" "pr number" || return 1
   assert_contains "$out" "**Merged by:** octocat" "merged_by" || return 1
@@ -112,97 +92,14 @@ JSON
   assert_contains "$out" "**All commits verified:** no" "verification summary rendered" || return 1
   assert_contains "$out" "unsigned" "unverified reason rendered" || return 1
 
-  # Branch Protection section
-  assert_contains "$out" "# Branch Protection" "BP section heading" || return 1
-  assert_contains "$out" "**Protected branches:** 1" "protected branch count" || return 1
-  assert_contains "$out" "\`main\`" "branch row" || return 1
-  assert_contains "$out" "ci/build" "status check listed" || return 1
-  assert_contains "$out" "protect-main" "ruleset name" || return 1
-  assert_contains "$out" "pull_request" "ruleset rule listed" || return 1
-
-  assert_render_safe "$out" "combined report must be render-safe"
-}
-
-# Empty rulesets with a 403 raw-snapshot status must show the reason, not a bare table.
-test_git_pull_request_markdown_ruleset_unavailable() {
-  local pred md
-  pred="${WORK}/pred-unavail.json"; md="${WORK}/unavail.md"
-
-  cat > "$pred" <<'JSON'
-{
-  "pull_request_merge": {
-    "merge": {}, "approvers": [], "commits_on_target_branch": [], "code_committers": [],
-    "commit_signatures": [], "all_commits_verified": false, "collection": {}
-  },
-  "branch_protection": {
-    "repository": { "full_name": "acme/widget", "url": "https://github.com/acme/widget" },
-    "collection": { "collected_at": "2026-07-23T11:28:24Z", "workflow_run_url": "https://github.com/acme/widget/actions/runs/1" },
-    "summary": { "protected_branch_count": 0, "ruleset_count": 0, "has_codeowners_file": false, "codeowners_rule_count": 0 },
-    "branches": [],
-    "rulesets": [],
-    "raw_snapshot": {
-      "sections": {
-        "branch_protection": {
-          "rulesets": { "http_status": 403, "status": "unavailable", "message": "Upgrade to GitHub Pro or make this repository public to enable this feature." }
-        }
-      }
-    }
-  }
-}
-JSON
-
-  PREDICATE_FILE="$pred" MARKDOWN_OUT="$md" \
-    "${REPO_ROOT}/scripts/build-markdown.sh" || return 1
-
-  local out; out="$(cat "$md")"
-  assert_contains "$out" "_No protected branches configured._" "empty branches note" || return 1
-  assert_contains "$out" "Unavailable: Upgrade to GitHub Pro" "ruleset unavailable reason" || return 1
-  assert_render_safe "$out" "unavailable report must be render-safe"
-}
-
-# A branch name containing a pipe must be escaped so it cannot break out of the
-# markdown table column (attacker-influenceable ref names).
-test_git_pull_request_markdown_escapes_pipe() {
-  local pred md
-  pred="${WORK}/pred-pipe.json"; md="${WORK}/pipe.md"
-
-  cat > "$pred" <<'JSON'
-{
-  "pull_request_merge": {
-    "merge": {}, "approvers": [], "commits_on_target_branch": [], "code_committers": [],
-    "commit_signatures": [], "all_commits_verified": false, "collection": {}
-  },
-  "branch_protection": {
-    "repository": { "full_name": "acme/widget", "url": "https://github.com/acme/widget" },
-    "collection": { "collected_at": "2026-07-23T11:00:00Z", "workflow_run_url": "https://github.com/acme/widget/actions/runs/1" },
-    "summary": { "protected_branch_count": 1, "ruleset_count": 0, "has_codeowners_file": false, "codeowners_rule_count": 0 },
-    "branches": [
-      {
-        "name": "feat|inject",
-        "required_pull_request_reviews": { "required": true, "required_approving_review_count": 1, "require_code_owner_reviews": false },
-        "required_status_checks": { "strict": false, "checks": [] },
-        "enforce_admins": false,
-        "allow_force_pushes": false
-      }
-    ],
-    "rulesets": []
-  }
-}
-JSON
-
-  PREDICATE_FILE="$pred" MARKDOWN_OUT="$md" \
-    "${REPO_ROOT}/scripts/build-markdown.sh" || return 1
-
-  local out; out="$(cat "$md")"
-  assert_contains "$out" 'feat\|inject' "pipe in branch name must be escaped as \\|" || return 1
-  if [[ "$out" == *'feat|inject'* ]]; then
-    echo "  FAIL: raw unescaped pipe leaked into table cell" >&2
+  if [[ "$out" == *"# Branch Protection"* ]]; then
+    echo "  FAIL: report must not include a Branch Protection section" >&2
     return 1
   fi
+
+  assert_render_safe "$out" "report must be render-safe"
 }
 
-run_test test_git_pull_request_markdown_both_sections
-run_test test_git_pull_request_markdown_ruleset_unavailable
-run_test test_git_pull_request_markdown_escapes_pipe
+run_test test_git_pull_request_markdown_renders_merge_section
 
 report_results

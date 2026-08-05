@@ -1,6 +1,0 @@
-[
-  {"path": "/repos/acme/widget/contents/.github/CODEOWNERS", "status": 404, "body": {"message": "Not Found"}},
-  {"path": "/repos/acme/widget/contents/CODEOWNERS", "status": 404, "body": {"message": "Not Found"}},
-  {"path": "/repos/acme/widget/contents/docs/CODEOWNERS", "status": 404, "body": {"message": "Not Found"}},
-  {"path": "/repos/acme/widget/codeowners/errors", "status": 200, "body": {"errors": []}}
-]
