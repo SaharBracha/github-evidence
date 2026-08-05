@@ -51,7 +51,7 @@ runs:
         oidc-provider-name: ${{ inputs.oidc_provider_name }}
 
     - name: Generate git evidence
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
       shell: bash
       env:
         AP: ${{ github.action_path }}
