@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Tests for scripts/build-predicate.sh: shapes both collector outputs into the
-# unified github-pull-request predicate and its merge-commit-identity subject file.
+# Tests for scripts/build-predicate.sh: shapes the collector output into the
+# github-pull-request predicate and its merge-commit-identity subject file.
 set -uo pipefail
 
 TESTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -16,8 +16,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 test_git_pull_request_predicate_and_subject() {
-  local pr_raw bp_raw pred subj
-  pr_raw="${WORK}/raw-pr.json"; bp_raw="${WORK}/raw-bp.json"
+  local pr_raw pred subj
+  pr_raw="${WORK}/raw-pr.json"
   pred="${WORK}/pred.json"; subj="${WORK}/subj.json"
 
   GITHUB_TOKEN="t" GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
@@ -25,12 +25,7 @@ test_git_pull_request_predicate_and_subject() {
     MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/pr-merge/pr-merge-success.json" \
     "${REPO_ROOT}/scripts/pull-request-merge/collect-pr-merge.sh" > "$pr_raw" || return 1
 
-  GITHUB_TOKEN="t" GITHUB_REPOSITORY="acme/widget" \
-    MOCK_CURL_FIXTURE="${TESTS_DIR}/fixtures/full-success.json" \
-    env -u GH_OWNER -u GH_REPO "${REPO_ROOT}/scripts/branch-protection/collect-settings-snapshot.sh" > "$bp_raw" || return 1
-
-  PR_RAW_SNAPSHOT_FILE="$pr_raw" BP_RAW_SNAPSHOT_FILE="$bp_raw" \
-    GITHUB_REPOSITORY="acme/widget" GITHUB_SERVER_URL="https://github.com" \
+  PR_RAW_SNAPSHOT_FILE="$pr_raw" \
     PREDICATE_OUT="$pred" SUBJECT_OUT="$subj" \
     "${REPO_ROOT}/scripts/build-predicate.sh" || return 1
 
@@ -41,27 +36,17 @@ test_git_pull_request_predicate_and_subject() {
   assert_equal "GithubPullRequest" "$(jq -r '.subject_type' "$pred")" "top-level subject_type" || return 1
   assert_equal "https://jfrog.com/evidence/pull-request-merge/v1" "$(jq -r '.predicate_type' "$pred")" "top-level predicate_type" || return 1
 
-  # Inner envelopes are stripped from both sections.
+  # Inner envelope is stripped from the PR section.
   assert_equal "null" "$(jq -r '.pull_request_merge.schema_version // "null"' "$pred")" "no inner PR schema_version" || return 1
-  assert_equal "null" "$(jq -r '.branch_protection.predicate_type // "null"' "$pred")" "no inner BP predicate_type" || return 1
+
+  # No branch_protection root key
+  assert_equal "null" "$(jq -r '.branch_protection // "null"' "$pred")" "no branch_protection root key" || return 1
 
   # pull_request_merge section
   assert_equal "mergesha" "$(jq -r '.pull_request_merge.merge.merge_commit_sha' "$pred")" "merge commit carried through" || return 1
   assert_equal "2" "$(jq '.pull_request_merge.approvers | length' "$pred")" "approvers carried through" || return 1
   assert_equal "2" "$(jq '.pull_request_merge.commit_signatures | length' "$pred")" "commit_signatures carried through" || return 1
   assert_equal "false" "$(jq -r '.pull_request_merge.all_commits_verified' "$pred")" "all_commits_verified carried through" || return 1
-
-  # branch_protection section
-  assert_equal "2" "$(jq -r '.branch_protection.summary.protected_branch_count' "$pred")" "protected branch count" || return 1
-  assert_equal "1" "$(jq -r '.branch_protection.summary.ruleset_count' "$pred")" "ruleset count" || return 1
-  assert_equal "2" "$(jq '.branch_protection.branches | length' "$pred")" "two normalized branches" || return 1
-  assert_equal "501" "$(jq -r '.branch_protection.rulesets[0].id' "$pred")" "ruleset id carried through" || return 1
-  assert_equal "1.0.0" "$(jq -r '.branch_protection.raw_snapshot.schema_version' "$pred")" "raw_snapshot embedded under branch_protection" || return 1
-
-  local main
-  main="$(jq -c '.branch_protection.branches[] | select(.name=="main")' "$pred")"
-  assert_equal "true" "$(printf '%s' "$main" | jq -r '.required_pull_request_reviews.require_code_owner_reviews')" "main requires code owner reviews" || return 1
-  assert_json_equal '["ci/build"]' "$(printf '%s' "$main" | jq -c '.required_status_checks.checks')" "required checks normalized from contexts" || return 1
 
   # Merge-commit identity subject
   assert_equal "mergesha" "$(jq -r '.merge_commit_sha' "$subj")" "subject merge_commit_sha" || return 1

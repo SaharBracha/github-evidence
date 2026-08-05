@@ -51,12 +51,15 @@ if [[ ! -f "$PREDICATE_FILE" ]]; then
 fi
 
 PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/pull-request-merge/v1"' "$PREDICATE_FILE")}"
-# Default id: readable "{owner}-{repo}-{prID}" from the fixture repository.
+# Default id: readable "{owner}-{repo}-{prID}" derived from the fixture repo URL.
 if [[ -z "${ENTITY_ID:-}" ]]; then
-  owner="$(jq -r '.branch_protection.repository.owner // empty' "$PREDICATE_FILE")"
-  repo="$(jq -r '.branch_protection.repository.name // empty' "$PREDICATE_FILE")"
+  # First entry in commits_on_target_branch is the PR head; use it if we can
+  # instead find the repo from the workflow_run_url which we know is well-formed.
+  slug="$(jq -r '(.pull_request_merge.collection.workflow_run_url // "") | capture("github\\.com/(?<slug>[^/]+/[^/]+)/") | .slug // empty' "$PREDICATE_FILE")"
   pr="${PR_NUMBER:-1}"
-  if [[ -n "$owner" && -n "$repo" ]]; then
+  if [[ -n "$slug" ]]; then
+    owner="${slug%%/*}"
+    repo="${slug#*/}"
     ENTITY_ID="${owner}-${repo}-${pr}"
   else
     ENTITY_ID="$(openssl rand -hex 20)"

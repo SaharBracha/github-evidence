@@ -40,10 +40,10 @@ build_prepare_req() {
 test_prepare_request_entity_subject() {
   local tmp req
   tmp="$(mktemp -d)"
-  printf '%s\n' '{"pull_request_merge":{},"branch_protection":{}}' > "${tmp}/predicate.json"
+  printf '%s\n' '{"pull_request_merge":{}}' > "${tmp}/predicate.json"
   req="$(build_prepare_req "${tmp}/predicate.json")"
   assert_json_equal \
-    '{"predicate":{"branch_protection":{},"pull_request_merge":{}},"predicate_type":"https://jfrog.com/evidence/pull-request-merge/v1","provider_id":"github-actions","subject":{"entity_id":"abcdef1234567890abcdef1234567890abcdef12","entity_type":"githubPullRequest","subject_type":"entity"}}' \
+    '{"predicate":{"pull_request_merge":{}},"predicate_type":"https://jfrog.com/evidence/pull-request-merge/v1","provider_id":"github-actions","subject":{"entity_id":"abcdef1234567890abcdef1234567890abcdef12","entity_type":"githubPullRequest","subject_type":"entity"}}' \
     "$req" \
     "prepare body without markdown" || { rm -rf "$tmp"; return 1; }
   rm -rf "$tmp"

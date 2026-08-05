@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Orchestrates evidence generation for a merged pull request. Collects both the
-# pull-request-merge and branch-protection snapshots, shapes them into a single
-# unified "github-pull-request" predicate + subject, renders a human-readable
-# markdown report, then creates one signed evidence on the pull-request entity.
-# This is the body of action.yml's "Generate git evidence" step, lifted into a
-# real script so it is statically linted, locally runnable, and unit-testable.
+# Orchestrates evidence generation for a merged pull request. Collects the
+# pull-request-merge snapshot, shapes it into the "github-pull-request"
+# predicate + subject, renders a human-readable markdown report, then creates
+# one signed evidence on the pull-request entity. This is the body of
+# action.yml's "Generate git evidence" step, lifted into a real script so it
+# is statically linted, locally runnable, and unit-testable.
 #
 # The evidence is attached to a githubPullRequest entity whose id is the readable
 # "{owner}-{repo}-{prID}" identity.
@@ -29,15 +29,14 @@ PREDICATE_TYPE="https://jfrog.com/evidence/pull-request-merge/v1"
 ENTITY_TYPE="githubPullRequest"
 ENTITY_ID="${GH_OWNER}-${GH_REPO}-${PR_NUMBER}"
 
-# Collect both snapshots, shape the unified predicate + subject, render the
+# Collect the merge snapshot, shape the predicate + subject, render the
 # markdown report, then create one signed entity evidence.
 main() {
   echo "::group::github-pull-request evidence"
 
   "${SCRIPT_DIR}/pull-request-merge/collect-pr-merge.sh" > pr-raw.json
-  "${SCRIPT_DIR}/branch-protection/collect-settings-snapshot.sh" > bp-raw.json
 
-  PR_RAW_SNAPSHOT_FILE=pr-raw.json BP_RAW_SNAPSHOT_FILE=bp-raw.json \
+  PR_RAW_SNAPSHOT_FILE=pr-raw.json \
     PREDICATE_TYPE="$PREDICATE_TYPE" \
     "${SCRIPT_DIR}/build-predicate.sh"
 

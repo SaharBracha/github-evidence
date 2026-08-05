@@ -2,15 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://jfrog.com/evidence/pull-request-merge/v1",
   "title": "Github Pull Request Evidence",
-  "description": "The unified github-pull-request predicate created by the jfrog/git-evidence action. Carries the merged pull request and the repository branch-protection settings under separate root keys.",
+  "description": "The github-pull-request predicate created by the jfrog/git-evidence action. Carries the merged pull request under the pull_request_merge root key.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
     "subject_type",
     "predicate_type",
-    "pull_request_merge",
-    "branch_protection"
+    "pull_request_merge"
   ],
   "properties": {
     "schema_version": {
@@ -57,79 +56,6 @@
           "description": "True when the PR has at least one commit and every commit's signature was verified by GitHub."
         },
         "collection": { "$ref": "#/$defs/prCollection" }
-      }
-    },
-    "branch_protection": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "repository",
-        "collection",
-        "summary",
-        "branches",
-        "rulesets",
-        "raw_snapshot"
-      ],
-      "properties": {
-        "repository": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["owner", "name", "full_name", "url"],
-          "properties": {
-            "owner": { "type": "string" },
-            "name": { "type": "string" },
-            "full_name": { "type": "string" },
-            "url": { "type": "string" }
-          }
-        },
-        "collection": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "collected_at",
-            "collector_version",
-            "github_api_host",
-            "workflow_run_url",
-            "token_scope_note"
-          ],
-          "properties": {
-            "collected_at": { "type": "string" },
-            "collector_version": { "type": "string" },
-            "github_api_host": { "type": "string" },
-            "workflow_run_url": { "type": "string" },
-            "token_scope_note": { "type": "string" }
-          }
-        },
-        "summary": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "protected_branch_count",
-            "ruleset_count",
-            "has_codeowners_file",
-            "codeowners_rule_count",
-            "codeowners_validation_errors_present"
-          ],
-          "properties": {
-            "protected_branch_count": { "type": "integer" },
-            "ruleset_count": { "type": "integer" },
-            "has_codeowners_file": { "type": "boolean" },
-            "codeowners_rule_count": { "type": "integer" },
-            "codeowners_validation_errors_present": { "type": "boolean" }
-          }
-        },
-        "branches": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/branch" }
-        },
-        "rulesets": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/ruleset" }
-        },
-        "raw_snapshot": {
-          "type": "object",
-          "description": "Full branch-protection collector snapshot, embedded in the predicate."
-        }
       }
     }
   },
@@ -217,104 +143,6 @@
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.000Z$"
         },
         "workflow_run_url": { "type": "string" }
-      }
-    },
-    "branch": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "name",
-        "protection_source",
-        "required_pull_request_reviews",
-        "required_status_checks",
-        "enforce_admins",
-        "allow_force_pushes",
-        "allow_deletions",
-        "required_linear_history",
-        "required_signatures",
-        "restrictions",
-        "code_owner_review_required",
-        "collection_status"
-      ],
-      "properties": {
-        "name": { "type": "string" },
-        "protection_source": {
-          "type": "array",
-          "items": { "enum": ["branch_protection", "ruleset"] }
-        },
-        "required_pull_request_reviews": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "required",
-            "required_approving_review_count",
-            "require_code_owner_reviews",
-            "dismiss_stale_reviews",
-            "require_last_push_approval"
-          ],
-          "properties": {
-            "required": { "type": "boolean" },
-            "required_approving_review_count": { "type": "integer" },
-            "require_code_owner_reviews": { "type": "boolean" },
-            "dismiss_stale_reviews": { "type": "boolean" },
-            "require_last_push_approval": { "type": "boolean" }
-          }
-        },
-        "required_status_checks": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["strict", "checks"],
-          "properties": {
-            "strict": { "type": "boolean" },
-            "checks": { "type": "array", "items": { "type": "string" } }
-          }
-        },
-        "enforce_admins": { "type": "boolean" },
-        "allow_force_pushes": { "type": "boolean" },
-        "allow_deletions": { "type": "boolean" },
-        "required_linear_history": { "type": "boolean" },
-        "required_signatures": { "type": "boolean" },
-        "restrictions": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["users", "teams", "apps"],
-          "properties": {
-            "users": { "type": "array", "items": { "type": "string" } },
-            "teams": { "type": "array", "items": { "type": "string" } },
-            "apps": { "type": "array", "items": { "type": "string" } }
-          }
-        },
-        "code_owner_review_required": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["via_branch_protection", "via_ruleset"],
-          "properties": {
-            "via_branch_protection": { "type": "boolean" },
-            "via_ruleset": { "type": "boolean" }
-          }
-        },
-        "collection_status": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["protection", "effective_rules"],
-          "properties": {
-            "protection": { "enum": ["collected", "unavailable", "error"] },
-            "effective_rules": { "enum": ["collected", "unavailable", "error"] }
-          }
-        }
-      }
-    },
-    "ruleset": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "name", "enforcement", "target", "conditions", "rules"],
-      "properties": {
-        "id": { "type": "integer" },
-        "name": { "type": "string" },
-        "enforcement": { "type": "string" },
-        "target": { "type": "string" },
-        "conditions": { "type": "object" },
-        "rules": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

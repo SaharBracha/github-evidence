@@ -28,71 +28,14 @@ review-and-merge controls into enforceable, auditable release policy.
 
 For every merged pull request, the action produces **one** signed evidence named
 `github-pull-request` attached to a `githubPullRequest` entity whose id is the
-`{owner}-{repo}-{prID}` identity. The single predicate
-carries two sections under separate root keys — `branch_protection` and
-`pull_request_merge` — so all the governance context for a merge travels as one
-attachment. It includes a **signed JSON predicate** (machine-readable, conforming
-to the published [`github-pull-request.json`](predicates/github-pull-request.json) schema) and a
+`{owner}-{repo}-{prID}` identity. The predicate carries the merged pull request
+under the `pull_request_merge` root key. It includes a **signed JSON predicate**
+(machine-readable, conforming to the published
+[`github-pull-request.json`](predicates/github-pull-request.json) schema) and a
 **human-readable report** you can open directly in the JFrog evidence **Content**
 tab.
 
 Everything is **read-only** against GitHub, and secret *values* are never fetched.
-
-### Branch protection (`branch_protection` key)
-
-A normalized snapshot of the repository's protected branches, rulesets, and
-CODEOWNERS enforcement at merge time — proof of how the repo was governed when
-the change landed. Lives under the predicate's `branch_protection` key (see the
-[`github-pull-request.json`](predicates/github-pull-request.json) schema).
-
-Example `branch_protection` section (abbreviated):
-
-```json
-{
-  "repository": {
-    "owner": "acme",
-    "name": "widget",
-    "full_name": "acme/widget",
-    "url": "https://github.com/acme/widget"
-  },
-  "summary": {
-    "protected_branch_count": 2,
-    "ruleset_count": 1,
-    "has_codeowners_file": true,
-    "codeowners_rule_count": 2,
-    "codeowners_validation_errors_present": false
-  },
-  "branches": [
-    {
-      "name": "main",
-      "protection_source": ["branch_protection", "ruleset"],
-      "required_pull_request_reviews": {
-        "required": true,
-        "required_approving_review_count": 2,
-        "require_code_owner_reviews": true,
-        "dismiss_stale_reviews": true,
-        "require_last_push_approval": false
-      },
-      "required_status_checks": { "strict": true, "checks": ["ci/build"] },
-      "enforce_admins": true,
-      "required_signatures": false,
-      "code_owner_review_required": { "via_branch_protection": true, "via_ruleset": true }
-    }
-  ]
-}
-```
-
-The full section also carries `rulesets`, a `collection` block, and the complete
-collector snapshot embedded verbatim as `raw_snapshot` (see the schema).
-
-**Using this in policies.** A JFrog AppTrust policy can evaluate fields such as
-`branch_protection.summary.protected_branch_count`,
-`branch_protection.branches[].required_pull_request_reviews.required_approving_review_count`,
-`branch_protection.branches[].required_pull_request_reviews.require_code_owner_reviews`,
-`branch_protection.branches[].required_signatures`, and
-`branch_protection.branches[].enforce_admins` — for example,
-to require that `main` enforced at least two approvals plus code-owner review at
-merge time. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
 
 ### Merged pull request (`pull_request_merge` key)
 
@@ -226,9 +169,8 @@ jobs:
 The `branches: [main]` filter scopes the workflow to pull requests targeting
 `main`, and the `closed` trigger plus the `if: ...merged == true` guard limits the
 job to merges — so closed-unmerged PRs produce nothing. Each merge into `main`
-then produces one combined `github-pull-request` evidence covering both the branch
-protection and the merge. Add more branches to the list to cover additional
-release branches. A runnable copy lives in
+then produces one `github-pull-request` evidence covering the merge. Add more
+branches to the list to cover additional release branches. A runnable copy lives in
 [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
 ## Inputs
@@ -242,8 +184,6 @@ release branches. A runnable copy lives in
 
 GitHub data is read from `api.github.com` with the workflow's built-in
 `GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
-Branch-protection fields the token isn't allowed to read are recorded as
-`unavailable` rather than failing the run.
 
 ### Identity enrichment
 
