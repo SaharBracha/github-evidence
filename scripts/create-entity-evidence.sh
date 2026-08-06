@@ -98,13 +98,15 @@ node "${SCRIPT_DIR}/lib/sign-dsse.mjs" \
   > envelope.json
 
 create_url="$post_url"
+# Drop providerId; the backend rejects it on non-artifact entities.
+create_url="$(printf '%s' "$create_url" | sed -E 's/([?&])providerId=[^&]*&?/\1/; s/[?&]$//')"
 if [[ -n "${APP_KEY:-}" ]]; then
   # Scope the create call to a JFrog application. `prepare` doesn't know about
-  # the app, so app_key is only appended on the create POST.
+  # the app, so application is only appended on the create POST.
   if [[ "$create_url" == *\?* ]]; then
-    create_url="${create_url}&app_key=${APP_KEY}"
+    create_url="${create_url}&application=${APP_KEY}"
   else
-    create_url="${create_url}?app_key=${APP_KEY}"
+    create_url="${create_url}?application=${APP_KEY}"
   fi
 fi
 
