@@ -55,9 +55,10 @@ jq -r --argjson subj "$subject_json" "$MD_HELPERS"'
   + (if $e.changes == null or ($e.changes | length) == 0 then "_No changes reported_\n"
      else "| Field | From | To |\n|---|---|---|\n"
        + ($e.changes | to_entries | map(
-           "| " + (.key | safe) + " | "
-           + (.value.from | dash) + " | "
-           + ((.value.to // null) | dash) + " |"
+           . as $ch
+           | "| " + ($ch.key | safe) + " | "
+           + ($ch.value.from | dash) + " | "
+           + (($ch.value.to // ($e.rule[$ch.key] // null)) | dash) + " |"
          ) | join("\n")) + "\n" end)
 
   + "\n## Repository Snapshot\n"
