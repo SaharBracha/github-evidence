@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Tests the ?app_key=<APP_KEY> URL rewrite in create-entity-evidence.sh by
+# Tests the ?application=<APP_KEY> URL rewrite in create-entity-evidence.sh by
 # stubbing `jf` on PATH and inspecting the URL passed to it.
 set -uo pipefail
 
@@ -65,7 +65,7 @@ test_app_key_appended_when_no_query() {
     rm -rf "$tmp"; return 1
   fi
   local url; url="$(cat "${tmp}/create-url.txt")"
-  assert_equal "/evidence/api/v1/entity/application/my-app?app_key=my-app" "$url" "url with ?app_key=" || { rm -rf "$tmp"; return 1; }
+  assert_equal "/evidence/api/v1/entity/application/my-app?application=my-app" "$url" "url with ?application=" || { rm -rf "$tmp"; return 1; }
   rm -rf "$tmp"
 }
 
@@ -75,7 +75,7 @@ test_app_key_appended_with_ampersand_when_existing_query() {
     rm -rf "$tmp"; return 1
   fi
   local url; url="$(cat "${tmp}/create-url.txt")"
-  assert_equal "/evidence/api/v1/entity/application/my-app?foo=bar&app_key=my-app" "$url" "url with &app_key=" || { rm -rf "$tmp"; return 1; }
+  assert_equal "/evidence/api/v1/entity/application/my-app?foo=bar&application=my-app" "$url" "url with &application=" || { rm -rf "$tmp"; return 1; }
   rm -rf "$tmp"
 }
 
