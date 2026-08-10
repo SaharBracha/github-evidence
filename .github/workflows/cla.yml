@@ -17,6 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check JFrog CLA
-        uses: jfrog/.github/actions/cla@main
+        uses: jfrog/.github/actions/cla@8342bf108acbcb73a0f951cdea804385bf1d16fc # main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
