@@ -2,7 +2,7 @@
 # (c) JFrog Ltd. (2026)
 # Shapes the pull-request-merge collector raw JSON into the "github-pull-request"
 # predicate and its subject file. The predicate carries the merge body under the
-# root key `pull_request_merge`; the subject is a compact merge-commit identity.
+# root section `pull_request_merge`; the subject is a compact merge-commit identity.
 # Writes predicate.json and subject.json (paths overridable via
 # PREDICATE_OUT / SUBJECT_OUT).
 #

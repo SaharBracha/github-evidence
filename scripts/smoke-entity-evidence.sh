@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
 # Local smoke test: prepare → DSSE sign → create evidence on a gitCommit entity.
-# Targets the default entity repo `githubPullRequest-entity` (no project/application scope).
+# Targets the default entity repo `gitCommit-entity` (no project/application scope).
 # Default predicate + markdown come from fixtures/unified-github-pull-request-predicate.json.
 #
 # Required env:
 #   JF_URL              Platform base URL, e.g. http://localhost:8082
-#   JF_ACCESS_TOKEN     Bearer token with annotate on githubPullRequest-entity
+#   JF_ACCESS_TOKEN     Bearer token with annotate on gitCommit-entity
 #   EVIDENCE_SIGNING_KEY  Private PEM contents, or set EVIDENCE_SIGNING_KEY_FILE
-#   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory
 #
 # Optional env:
+#   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory (default: github-evidence)
 #   ENTITY_TYPE         Default: gitCommit
 #   ENTITY_ID           Default: merge commit sha from the fixture
 #                       (.pull_request_merge.merge.merge_commit_sha)
@@ -23,7 +23,6 @@
 #   JF_URL=http://localhost:8082 \
 #   JF_ACCESS_TOKEN=... \
 #   EVIDENCE_SIGNING_KEY_FILE=./private.pem \
-#   EVIDENCE_KEY_ALIAS=my-key \
 #   bash scripts/smoke-entity-evidence.sh
 set -euo pipefail
 set +x
@@ -33,7 +32,8 @@ DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-github-pull-request-predicate.
 
 : "${JF_URL:?JF_URL must be set}"
 : "${JF_ACCESS_TOKEN:?JF_ACCESS_TOKEN must be set}"
-: "${EVIDENCE_KEY_ALIAS:?EVIDENCE_KEY_ALIAS must be set}"
+
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-github-evidence}"
 
 if [[ -n "${EVIDENCE_SIGNING_KEY_FILE:-}" ]]; then
   EVIDENCE_SIGNING_KEY="$(< "$EVIDENCE_SIGNING_KEY_FILE")"
@@ -116,7 +116,7 @@ jq_filter='{
 
 jq "${jq_args[@]}" "$jq_filter" > "$PREPARE_REQ"
 
-echo "→ prepare  entity=${ENTITY_TYPE}/${ENTITY_ID}  (repo githubPullRequest-entity)" >&2
+echo "→ prepare  entity=${ENTITY_TYPE}/${ENTITY_ID}  (repo gitCommit-entity)" >&2
 echo "  predicate=${PREDICATE_FILE}" >&2
 http_code="$(
   curl -sS -o "$PREPARE_RESP" -w '%{http_code}' \
