@@ -157,7 +157,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
       - uses: jfrog/git-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}

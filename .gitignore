@@ -1,6 +1,8 @@
 .idea/
 .claude/
 .DS_Store
+.env
+.env.*
 # Working files produced at action runtime
 predicate.json
 subject.json
