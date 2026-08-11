@@ -12,7 +12,7 @@ Default sample data is [`fixtures/unified-github-pull-request-predicate.json`](f
 `{owner}-{repo}-{prID}` identity from the fixture repository.
 
 Requires a platform Evidence build that includes non-artifact entity APIs
-(RTDEV-92120).
+(Evidence on Non-Artifacts).
 
 ## Prerequisites
 

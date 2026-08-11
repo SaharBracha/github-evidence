@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - uses: jfrog/git-evidence@v1
+      - uses: jfrog/github-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
