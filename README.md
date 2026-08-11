@@ -1,8 +1,8 @@
 # JFrog Traceability
 
 A single GitHub Action that collects **Git data** from your repository and
-records it as **signed JFrog evidence** on the merge commit entity. It runs when
-a pull request is **merged into your main branch**, giving you a tamper-evident,
+records it as **signed JFrog evidence** on a `githubPullRequest` entity. It runs
+when a pull request is **merged into your main branch**, giving you a tamper-evident,
 cryptographically signed record of how each change was reviewed and how your
 repository was governed at that moment.
 
@@ -98,12 +98,11 @@ Once the action runs, the signed evidence lives in Artifactory — you do
 
 **Where it lives.** Each run attaches signed evidence to a non-artifact
 **entity** whose type is `githubPullRequest` and whose id is the
-`{owner}-{repo}-{prID}` identity.
-With project scope, Evidence stores it under the conventional repository
-`{jf_project}-githubPullRequest-entity` (path under `.entities/githubPullRequest/...`).
+`{owner}-{repo}-{prID}` identity. Evidence stores it under the default
+`githubPullRequest-entity` repository (path under `.entities/githubPullRequest/...`).
 
 **How to retrieve and verify.** List evidence with the Evidence REST API
-(`GET /evidence/api/v1/entity/githubPullRequest/{owner}-{repo}-{prID}?project-key=...`)
+(`GET /evidence/api/v1/entity/githubPullRequest/{owner}-{repo}-{prID}`)
 or GraphQL `hasEntityWith`, and open the human-readable **Content** report in the
 JFrog UI. You can also cryptographically verify evidence with the JFrog CLI
 (`jf evidence verify`).
@@ -121,13 +120,12 @@ installs and configures the JFrog CLI for you (URL normalization, OIDC token
 exchange, and project selection) in its own step. The prerequisites are the
 platform-side setup:
 
-- A **JFrog project** (you'll reference its project key).
-- An **entity repository** named `{jf_project}-githubPullRequest-entity` in Artifactory
+- An **entity repository** named `githubPullRequest-entity` in Artifactory
   (Evidence does not create it automatically). The OIDC identity must be able to
   annotate that repository.
-- A platform Evidence service that includes **non-artifact entity APIs**
-  (RTDEV-92120 / Evidence on Non-Artifacts). Older Evidence builds that only
-  support artifact subjects are not compatible.
+- A platform Evidence service that includes **Evidence on Non-Artifacts**
+  (non-artifact entity APIs). Older Evidence builds that only support artifact
+  subjects are not compatible.
 - An **OIDC integration** under **Administration → OIDC**, with an identity
   mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
   access token is stored — the runner exchanges its GitHub OIDC token for JFrog
@@ -137,6 +135,25 @@ platform-side setup:
 
 See [Required secrets and variables](#required-secrets-and-variables) for how to
 wire these into your repository.
+
+## Setup
+
+A one-time setup, in order:
+
+1. **Create the entity repository** `githubPullRequest-entity` in Artifactory.
+2. **Register the signing key** — upload your evidence signing key (private PEM)
+   to the platform and note its **alias**.
+3. **Configure OIDC** under **Administration → OIDC** with an identity mapping
+   for this GitHub repository; note the **provider name**.
+4. **Add the GitHub secret and variables** (see
+   [Required secrets and variables](#required-secrets-and-variables)):
+   `EVIDENCE_KEY` (secret), `JF_URL`, `JF_OIDC_PROVIDER`, `EVIDENCE_KEY_ALIAS`.
+5. **Add the workflow** from [Quick start](#quick-start) to
+   `.github/workflows/`.
+
+Merge a pull request into `main` and confirm the workflow succeeds; the evidence
+appears on the `githubPullRequest` entity (see
+[On the JFrog platform](#on-the-jfrog-platform)).
 
 ## Quick start
 
@@ -158,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: jfrog/git-evidence@v1
+      - uses: jfrog/github-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
@@ -177,7 +194,7 @@ branches to the list to cover additional release branches. A runnable copy lives
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://&lt;host&gt;/`). |
+| `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://<host>/`). |
 | `oidc_provider_name` | yes | — | Name of the OIDC integration in the JFrog platform; the runner exchanges its GitHub OIDC token for JFrog access (no stored token). |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
 | `evidence_key_alias` | yes | — | Signing key alias registered in the JFrog platform. |
@@ -225,3 +242,13 @@ repository, and use its provider name as `JF_OIDC_PROVIDER`.
 
 Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 `@vX.Y.Z` for an immutable pin.
+
+## Troubleshooting
+
+| Symptom in the run log | Likely cause | Fix |
+|---|---|---|
+| OIDC token exchange fails in **Setup JFrog CLI** | `id-token: write` missing, or no OIDC identity mapping for this repo | Add the permission to the workflow and configure the mapping under **Administration → OIDC**. |
+| `evidence prepare failed` with `404` | The `githubPullRequest-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
+| `evidence prepare failed` (other) | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with non-artifact entity APIs. |
+| `evidence create failed` about the key/alias | `EVIDENCE_KEY_ALIAS` does not match a registered key, or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
+| The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
