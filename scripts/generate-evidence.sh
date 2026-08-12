@@ -3,12 +3,12 @@
 # Orchestrates evidence generation for a merged pull request. Collects the
 # pull-request-merge snapshot, shapes it into the "github-pull-request"
 # predicate + subject, renders a human-readable markdown report, then creates
-# one signed evidence on the pull-request entity. This is the body of
+# one signed evidence on the merge-commit entity. This is the body of
 # action.yml's "Generate git evidence" step, lifted into a real script so it
 # is statically linted, locally runnable, and unit-testable.
 #
-# The evidence is attached to a githubPullRequest entity whose id is the readable
-# "{owner}-{repo}-{prID}" identity.
+# The evidence is attached to a gitCommit entity whose id is the merge commit
+# sha sourced from the unified predicate JSON.
 #
 # Required env: GITHUB_REPOSITORY, GITHUB_SHA (or PR_NUMBER), plus everything
 #   the collector / build / create scripts require (GITHUB_TOKEN,
@@ -26,8 +26,7 @@ resolve_owner_repo
 resolve_pr_number
 
 PREDICATE_TYPE="https://jfrog.com/evidence/pull-request-merge/v1"
-ENTITY_TYPE="githubPullRequest"
-ENTITY_ID="${GH_OWNER}-${GH_REPO}-${PR_NUMBER}"
+ENTITY_TYPE="gitCommit"
 
 # Collect the merge snapshot, shape the predicate + subject, render the
 # markdown report, then create one signed entity evidence.
@@ -39,6 +38,9 @@ main() {
   PR_RAW_SNAPSHOT_FILE=pr-raw.json \
     PREDICATE_TYPE="$PREDICATE_TYPE" \
     "${SCRIPT_DIR}/build-predicate.sh"
+
+  ENTITY_ID="$(jq -r '.pull_request_merge.merge.merge_commit_sha // empty' predicate.json)"
+  : "${ENTITY_ID:?merge_commit_sha not found in predicate JSON}"
 
   PREDICATE_FILE=predicate.json SUBJECT_FILE=subject.json MARKDOWN_OUT=report.md \
     "${SCRIPT_DIR}/build-markdown.sh"

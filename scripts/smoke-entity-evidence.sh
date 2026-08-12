@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Local smoke test: prepare → DSSE sign → create evidence on githubPullRequest entity.
+# Local smoke test: prepare → DSSE sign → create evidence on a gitCommit entity.
 # Targets the default entity repo `githubPullRequest-entity` (no project/application scope).
 # Default predicate + markdown come from fixtures/unified-github-pull-request-predicate.json.
 #
@@ -11,9 +11,9 @@
 #   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory
 #
 # Optional env:
-#   ENTITY_TYPE         Default: githubPullRequest
-#   ENTITY_ID           Default: {owner}-{repo}-{prID} from fixture + PR_NUMBER
-#   PR_NUMBER           Default: 1 (used when ENTITY_ID is unset)
+#   ENTITY_TYPE         Default: gitCommit
+#   ENTITY_ID           Default: merge commit sha from the fixture
+#                       (.pull_request_merge.merge.merge_commit_sha)
 #   PREDICATE_FILE      Default: fixtures/unified-github-pull-request-predicate.json
 #   MARKDOWN_FILE       Default: rendered from the predicate via build-markdown.sh
 #   PROVIDER_ID         Default: github-actions
@@ -41,7 +41,7 @@ fi
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY or EVIDENCE_SIGNING_KEY_FILE must be set}"
 
 JF_URL="${JF_URL%/}"
-ENTITY_TYPE="${ENTITY_TYPE:-githubPullRequest}"
+ENTITY_TYPE="${ENTITY_TYPE:-gitCommit}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 PREDICATE_FILE="${PREDICATE_FILE:-$DEFAULT_PREDICATE}"
 
@@ -51,18 +51,13 @@ if [[ ! -f "$PREDICATE_FILE" ]]; then
 fi
 
 PREDICATE_TYPE="${PREDICATE_TYPE:-$(jq -r '.predicate_type // "https://jfrog.com/evidence/pull-request-merge/v1"' "$PREDICATE_FILE")}"
-# Default id: readable "{owner}-{repo}-{prID}" derived from the fixture repo URL.
+# Default id: merge commit sha from the fixture — matches how generate-evidence.sh
+# derives ENTITY_ID from the unified predicate JSON.
 if [[ -z "${ENTITY_ID:-}" ]]; then
-  # First entry in commits_on_target_branch is the PR head; use it if we can
-  # instead find the repo from the workflow_run_url which we know is well-formed.
-  slug="$(jq -r '(.pull_request_merge.collection.workflow_run_url // "") | capture("github\\.com/(?<slug>[^/]+/[^/]+)/") | .slug // empty' "$PREDICATE_FILE")"
-  pr="${PR_NUMBER:-1}"
-  if [[ -n "$slug" ]]; then
-    owner="${slug%%/*}"
-    repo="${slug#*/}"
-    ENTITY_ID="${owner}-${repo}-${pr}"
-  else
-    ENTITY_ID="$(openssl rand -hex 20)"
+  ENTITY_ID="$(jq -r '.pull_request_merge.merge.merge_commit_sha // empty' "$PREDICATE_FILE")"
+  if [[ -z "$ENTITY_ID" ]]; then
+    echo "::error::merge_commit_sha not found in ${PREDICATE_FILE}; set ENTITY_ID explicitly" >&2
+    exit 1
   fi
 fi
 
