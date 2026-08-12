@@ -19,10 +19,12 @@ test_sign_dsse_envelope_shape_and_verify() {
   openssl genrsa -out "${tmp}/key.pem" 2048 >/dev/null 2>&1
   openssl rsa -in "${tmp}/key.pem" -pubout -out "${tmp}/pub.pem" >/dev/null 2>&1
 
-  payload_b64="$(printf '{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"githubPullRequest","digest":{"githubPullRequest":"abc123"}}]}' | base64 | tr -d '\n')"
+  local sha="abcdef1234567890abcdef1234567890abcdef12"
+  payload_b64="$(printf '{"_type":"https://in-toto.io/Statement/v1","subject":[{"name":"gitCommit","digest":{"gitCommit":"%s"}}]}' "$sha" | base64 | tr -d '\n')"
   jq -n \
     --arg payload "$payload_b64" \
-    '{dsse_payload: $payload, dsse_payload_type: "application/vnd.in-toto+json", post_url: "/evidence/api/v1/entity/githubPullRequest/abc123"}' \
+    --arg post_url "/evidence/api/v1/entity/gitCommit/${sha}" \
+    '{dsse_payload: $payload, dsse_payload_type: "application/vnd.in-toto+json", post_url: $post_url}' \
     > "${tmp}/prep.json"
 
   envelope="$(node "$SIGN_DSSE" \

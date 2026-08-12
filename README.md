@@ -1,7 +1,8 @@
 # JFrog Traceability
 
 A single GitHub Action that collects **Git data** from your repository and
-records it as **signed JFrog evidence** on a `githubPullRequest` entity. It runs
+records it as **signed JFrog evidence** on a `gitCommit` entity (keyed by the
+merge commit sha). It runs
 when a pull request is **merged into your main branch**, giving you a tamper-evident,
 cryptographically signed record of how each change was reviewed and how your
 repository was governed at that moment.
@@ -27,8 +28,8 @@ review-and-merge controls into enforceable, auditable release policy.
 ## What you get
 
 For every merged pull request, the action produces **one** signed evidence named
-`github-pull-request` attached to a `githubPullRequest` entity whose id is the
-`{owner}-{repo}-{prID}` identity. The predicate carries the merged pull request
+`github-pull-request` attached to a `gitCommit` entity whose id is the merge
+commit sha (`<gitSha>`). The predicate carries the merged pull request
 under the `pull_request_merge` root key. It includes a **signed JSON predicate**
 (machine-readable, conforming to the published
 [`github-pull-request.json`](predicates/github-pull-request.json) schema) and a
@@ -97,15 +98,15 @@ Once the action runs, the signed evidence lives in Artifactory — you do
 **not** need JFrog AppTrust to produce or store it.
 
 **Where it lives.** Each run attaches signed evidence to a non-artifact
-**entity** whose type is `githubPullRequest` and whose id is the
-`{owner}-{repo}-{prID}` identity. Evidence stores it under the default
-`githubPullRequest-entity` repository (path under `.entities/githubPullRequest/...`).
+**entity** whose type is `gitCommit` and whose id is the merge commit sha
+(`<gitSha>`). Evidence stores it under the default `githubPullRequest-entity`
+repository (path under `.entities/gitCommit/...`).
 
 **How to retrieve and verify.** List evidence with the Evidence REST API
-(`GET /evidence/api/v1/entity/githubPullRequest/{owner}-{repo}-{prID}`)
-or GraphQL `hasEntityWith`, and open the human-readable **Content** report in the
-JFrog UI. You can also cryptographically verify evidence with the JFrog CLI
-(`jf evidence verify`).
+(`GET /evidence/api/v1/entity/gitCommit/<gitSha>`) or GraphQL
+`hasEntityWith(entity_type: "gitCommit", entity_id: "<gitSha>")`, and open the
+human-readable **Content** report in the JFrog UI. You can also
+cryptographically verify evidence with the JFrog CLI (`jf evidence verify`).
 
 **How it's used.** This evidence is a signed, auditable record that stands on its
 own — no AppTrust required. When the resulting artifact is later **promoted**,
@@ -152,7 +153,7 @@ A one-time setup, in order:
    `.github/workflows/`.
 
 Merge a pull request into `main` and confirm the workflow succeeds; the evidence
-appears on the `githubPullRequest` entity (see
+appears on the `gitCommit` entity for the merge sha (see
 [On the JFrog platform](#on-the-jfrog-platform)).
 
 ## Quick start

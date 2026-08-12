@@ -1,9 +1,9 @@
 name: 'JFrog Traceability'
 description: >-
-  Collect Git evidence and attach it as signed JFrog evidence on a
-  githubPullRequest entity. On a merged pull request, records one
-  github-pull-request evidence covering the merge's approvers, commits, and
-  committers.
+  Collect Git evidence and attach it as signed JFrog evidence on the merge
+  commit (a gitCommit entity keyed by the merge sha). On a merged pull
+  request, records one github-pull-request evidence covering the merge's
+  approvers, commits, and committers.
 author: JFrog
 branding:
   icon: shield

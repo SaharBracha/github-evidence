@@ -13,3 +13,5 @@ envelope.json
 create-resp.json
 report.md
 pr-raw.json
+
+.impl-session/
