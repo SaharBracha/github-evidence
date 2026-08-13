@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Creates signed JFrog evidence on a gitCommit entity via the Evidence prepare +
-# entity create APIs. Assumes the JFrog CLI is already configured
-# (setup-jfrog-cli / jf c) so `jf api` can authenticate against the platform.
+# Creates signed JFrog evidence on a gitCommit (or other non-artifact) entity
+# by invoking `jf evd create`. Assumes the JFrog CLI is already configured
+# (setup-jfrog-cli / jf c) so `jf evd create` can authenticate against the
+# platform.
 #
 # Required env: PREDICATE_FILE, PREDICATE_TYPE, ENTITY_TYPE, ENTITY_ID,
 #               EVIDENCE_SIGNING_KEY.
 # Optional env: EVIDENCE_KEY_ALIAS (default github-evidence),
-#               MARKDOWN_FILE (human-readable report included in prepare),
+#               MARKDOWN_FILE (human-readable report attached to the evidence),
 #               PROVIDER_ID (default github-actions).
 set -euo pipefail
 # This script writes the private signing key to disk. Force xtrace off so an
 # inherited `set -x` or RUNNER_DEBUG=1 can never echo the PEM into the run log.
 set +x
-
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 : "${PREDICATE_FILE:?PREDICATE_FILE must be set}"
 : "${PREDICATE_TYPE:?PREDICATE_TYPE must be set}"
@@ -34,80 +33,36 @@ fi
 # restrictive umask, so the private key is never briefly world-readable and is
 # always removed on exit (including if a signal arrives mid-write).
 cleanup() {
-  rm -f evidence-signing-key.pem prepare-req.json prepare-resp.json envelope.json create-resp.json
+  rm -f evidence-signing-key.pem
 }
 trap cleanup EXIT
 ( umask 077; printf '%s\n' "$EVIDENCE_SIGNING_KEY" > evidence-signing-key.pem )
 chmod 600 evidence-signing-key.pem
 
-jq_args=(
-  -n
-  --slurpfile predicate "$PREDICATE_FILE"
-  --arg predicate_type "$PREDICATE_TYPE"
-  --arg provider_id "$PROVIDER_ID"
-  --arg entity_type "$ENTITY_TYPE"
-  --arg entity_id "$ENTITY_ID"
+cli_args=(
+  evd create
+  --entity-type "$ENTITY_TYPE"
+  --entity-id "$ENTITY_ID"
+  --predicate "$PREDICATE_FILE"
+  --predicate-type "$PREDICATE_TYPE"
+  --key ./evidence-signing-key.pem
+  --key-alias "$EVIDENCE_KEY_ALIAS"
+  --provider-id "$PROVIDER_ID"
 )
-jq_filter='{
-  predicate: $predicate[0],
-  predicate_type: $predicate_type,
-  provider_id: $provider_id,
-  subject: {
-    subject_type: "entity",
-    entity_type: $entity_type,
-    entity_id: $entity_id
-  }
-}'
 
 if [[ -n "${MARKDOWN_FILE:-}" ]]; then
   if [[ -f "$MARKDOWN_FILE" ]]; then
     echo "Including markdown report ${MARKDOWN_FILE}" >&2
-    jq_args+=(--rawfile markdown "$MARKDOWN_FILE")
-    jq_filter+=' | . + {markdown: $markdown}'
+    cli_args+=(--markdown "$MARKDOWN_FILE")
   else
     echo "::warning::MARKDOWN_FILE set but not found: ${MARKDOWN_FILE}; skipping markdown" >&2
   fi
 fi
 
-jq "${jq_args[@]}" "$jq_filter" > prepare-req.json
-
-echo "Preparing evidence for entity ${ENTITY_TYPE}/${ENTITY_ID}" >&2
-# jf api prints HTTP status on stderr; body on stdout. Non-2xx exits 1.
-if ! jf api \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --input prepare-req.json \
-  /evidence/api/v1/evidence/prepare \
-  > prepare-resp.json; then
-  echo "::error::evidence prepare failed" >&2
-  cat prepare-resp.json >&2 || true
-  exit 1
-fi
-
-post_url="$(jq -r '.post_url // empty' prepare-resp.json)"
-if [[ -z "$post_url" ]]; then
-  echo "::error::prepare response missing post_url" >&2
-  cat prepare-resp.json >&2
-  exit 1
-fi
-
-node "${SCRIPT_DIR}/lib/sign-dsse.mjs" \
-  --prepare-response prepare-resp.json \
-  --key ./evidence-signing-key.pem \
-  --key-id "$EVIDENCE_KEY_ALIAS" \
-  > envelope.json
-
-echo "Creating evidence at ${post_url}" >&2
-if ! jf api \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --input envelope.json \
-  "$post_url" \
-  > create-resp.json; then
+echo "Creating evidence for entity ${ENTITY_TYPE}/${ENTITY_ID}" >&2
+if ! jf "${cli_args[@]}"; then
   echo "::error::evidence create failed" >&2
-  cat create-resp.json >&2 || true
   exit 1
 fi
-rm -f create-resp.json
 
 echo "Evidence uploaded successfully" >&2

@@ -7,10 +7,6 @@
 predicate.json
 subject.json
 evidence-signing-key.pem
-prepare-req.json
-prepare-resp.json
-envelope.json
-create-resp.json
 report.md
 pr-raw.json
 
