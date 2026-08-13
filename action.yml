@@ -25,8 +25,8 @@ inputs:
   evidence_key_alias:
     description: >-
       Evidence signing key alias registered in the JFrog platform. Optional;
-      leave unset to use the default alias (see README). Set only when the
-      public key was registered under a different alias.
+      defaults to `github-evidence`. Set only when the public key was
+      registered under a different alias.
     required: false
 
 runs:
