@@ -29,12 +29,14 @@ set -euo pipefail
 set +x
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=./lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-github-pull-request-predicate.json"
 
 : "${JF_URL:?JF_URL must be set}"
 : "${JF_ACCESS_TOKEN:?JF_ACCESS_TOKEN must be set}"
 
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-github-evidence}"
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
 
 if [[ -n "${EVIDENCE_SIGNING_KEY_FILE:-}" ]]; then
   EVIDENCE_SIGNING_KEY="$(< "$EVIDENCE_SIGNING_KEY_FILE")"

@@ -15,13 +15,17 @@ set -euo pipefail
 # inherited `set -x` or RUNNER_DEBUG=1 can never echo the PEM into the run log.
 set +x
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+# shellcheck source=./lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
+
 : "${PREDICATE_FILE:?PREDICATE_FILE must be set}"
 : "${PREDICATE_TYPE:?PREDICATE_TYPE must be set}"
 : "${ENTITY_TYPE:?ENTITY_TYPE must be set}"
 : "${ENTITY_ID:?ENTITY_ID must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
 
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-github-evidence}"
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 
 if [[ ! -f "$PREDICATE_FILE" ]]; then
