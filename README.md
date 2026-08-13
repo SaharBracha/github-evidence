@@ -216,6 +216,15 @@ branch then produces one `github-pull-request` evidence covering the merge. Add
 more branches to the list to cover additional release branches. A runnable copy
 lives in [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
+**Run-once guarantee.** The action itself also enforces this: it runs to
+completion only on a `pull_request: closed` event with
+`merged == true`. Any other trigger the caller might listen to (a `push` to
+the target branch, `pull_request` opened/synchronize/reopened, a closed but
+unmerged PR, `workflow_dispatch`, etc.) is skipped early with a workflow
+notice, before the JFrog CLI is installed or OIDC is exchanged. This means a
+single merge produces exactly one evidence document even if the calling
+workflow subscribes to broader events.
+
 ## Inputs
 
 | Input | Required | Default | Description |
@@ -278,4 +287,5 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 | `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
 | `jf evd create` fails about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
+| `notice: Skipping JFrog Traceability …` and no evidence is created | The calling workflow invoked the action on a non-merged trigger (e.g. `push`, `pull_request: opened`, an unmerged close) | Expected — the built-in run-once guard skips everything except `pull_request: closed` with `merged == true`. Narrow the workflow's triggers if you want to avoid the empty run. |
 | `403` listing or opening evidence | Caller lacks **Read** on `gitCommit-entity` | Grant Read only to identities that should see cross-repo merge evidence. |

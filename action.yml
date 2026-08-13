@@ -32,7 +32,32 @@ inputs:
 runs:
   using: composite
   steps:
+    # Ensure the action runs at most once per merge, regardless of how the
+    # calling workflow is wired. Evidence is only recorded on the
+    # `pull_request: closed` event when `merged == true`; every other trigger
+    # (push to the target branch, pull_request opened/synchronize/reopened,
+    # unmerged close, workflow_dispatch, …) is skipped with a notice so no
+    # subsequent step spins up a runner or exchanges an OIDC token.
+    - name: Preflight — only run on merged pull requests
+      id: preflight
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        EVENT_ACTION: ${{ github.event.action }}
+        PR_MERGED: ${{ github.event.pull_request.merged }}
+      run: |
+        set -euo pipefail
+        if [[ "$EVENT_NAME" == "pull_request" \
+           && "$EVENT_ACTION" == "closed" \
+           && "$PR_MERGED" == "true" ]]; then
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "should_run=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
+        fi
+
     - name: Normalize JFrog URL
+      if: steps.preflight.outputs.should_run == 'true'
       shell: bash
       env:
         JF_URL_INPUT: ${{ inputs.jf_url }}
@@ -45,6 +70,7 @@ runs:
         echo "JF_URL=https://${host}/" >> "$GITHUB_ENV"
 
     - name: Setup JFrog CLI
+      if: steps.preflight.outputs.should_run == 'true'
       uses: jfrog/setup-jfrog-cli@v4.9.1
       env:
         JF_URL: ${{ env.JF_URL }}
@@ -53,6 +79,7 @@ runs:
         oidc-provider-name: ${{ inputs.oidc_provider_name }}
 
     - name: Generate git evidence
+      if: steps.preflight.outputs.should_run == 'true'
       shell: bash
       env:
         AP: ${{ github.action_path }}
