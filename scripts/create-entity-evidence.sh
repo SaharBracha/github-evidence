@@ -25,7 +25,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 : "${ENTITY_ID:?ENTITY_ID must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
 
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$EVIDENCE_KEY_ALIAS_DEFAULT}"
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 
 if [[ ! -f "$PREDICATE_FILE" ]]; then

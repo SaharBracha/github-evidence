@@ -36,7 +36,7 @@ DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-github-pull-request-predicate.
 : "${JF_URL:?JF_URL must be set}"
 : "${JF_ACCESS_TOKEN:?JF_ACCESS_TOKEN must be set}"
 
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$EVIDENCE_KEY_ALIAS_DEFAULT}"
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
 
 if [[ -n "${EVIDENCE_SIGNING_KEY_FILE:-}" ]]; then
   EVIDENCE_SIGNING_KEY="$(< "$EVIDENCE_SIGNING_KEY_FILE")"
