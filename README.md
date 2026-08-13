@@ -128,10 +128,10 @@ applications that include the same artifact can surface different PR lists. See
 
 ## Prerequisites
 
-You do **not** need to add `jfrog/setup-jfrog-cli` to your workflow — this action
-installs and configures the JFrog CLI for you (URL normalization, OIDC token
-exchange, and project selection) in its own step. The prerequisites are the
-platform-side setup:
+You do **not** need to add `jfrog/setup-jfrog-cli` to your workflow — this
+action installs and configures the latest JFrog CLI for you (URL normalization,
+OIDC token exchange, and project selection) in its own step. The prerequisites
+are the platform-side setup:
 
 - An **entity repository** named `gitCommit-entity` in Artifactory
   (Evidence does not create it automatically). The OIDC identity used by this
@@ -274,8 +274,8 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 | Symptom in the run log | Likely cause | Fix |
 |---|---|---|
 | OIDC token exchange fails in **Setup JFrog CLI** | `id-token: write` missing, or no OIDC identity mapping for this repo | Add the permission to the workflow and configure the mapping under **Administration → OIDC**. |
-| `evidence prepare failed` with `404` | The `gitCommit-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
-| `evidence prepare failed` (other) | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
-| `evidence create failed` about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
+| `jf evd create` fails with `404` | The `gitCommit-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
+| `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
+| `jf evd create` fails about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
 | `403` listing or opening evidence | Caller lacks **Read** on `gitCommit-entity` | Grant Read only to identities that should see cross-repo merge evidence. |

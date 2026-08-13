@@ -1,7 +1,7 @@
 # Local entity evidence smoke test
-[`smoke-entity-evidence.sh`](smoke-entity-evidence.sh) creates signed evidence on a
-`gitCommit` entity (keyed by the merge commit sha) via the Evidence
-**prepare → sign → create** APIs.
+[`smoke-entity-evidence.sh`](smoke-entity-evidence.sh) creates signed evidence
+on a `gitCommit` entity (keyed by the merge commit sha) by invoking
+`jf evd create --entity-type gitCommit --entity-id <sha>`.
 It uses the **default** entity repository `gitCommit-entity` (no `project_key` /
 `application-key` / `repo` scope).
 Default sample data is [`fixtures/unified-github-pull-request-predicate.json`](fixtures/unified-github-pull-request-predicate.json)
@@ -46,11 +46,11 @@ bash scripts/smoke-entity-evidence.sh
 ## What it does
 1. Loads the unified predicate fixture (or `PREDICATE_FILE`)
 2. Renders markdown via `build-markdown.sh` (or uses `MARKDOWN_FILE`)
-3. `POST /evidence/api/v1/evidence/prepare` with `subject_type=entity`,
-   `entity_type=gitCommit`
-4. Signs the returned DSSE payload with [`lib/sign-dsse.mjs`](lib/sign-dsse.mjs)
-5. `POST` the envelope to the returned `post_url`
-   (`/evidence/api/v1/entity/gitCommit/<gitSha>`)
-6. `GET` the same entity to list evidence (unless `SKIP_LIST` is set)
-On success, stderr prints the created evidence id/name/path and stdout shows the
-list response.
+3. Configures a transient JFrog CLI server context from `JF_URL` +
+   `JF_ACCESS_TOKEN`
+4. Runs `jf evd create --entity-type gitCommit --entity-id <sha>` with the
+   predicate, markdown, key, and key alias
+5. `GET /evidence/api/v1/entity/gitCommit/<gitSha>` to list evidence (unless
+   `SKIP_LIST` is set)
+On success, `jf evd create` prints the created evidence details and, when
+listing is enabled, stdout shows the list response.
