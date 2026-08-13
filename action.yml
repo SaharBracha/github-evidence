@@ -28,22 +28,30 @@ inputs:
       defaults to `github-evidence`. Set only when the public key was
       registered under a different alias.
     required: false
+  target_branch:
+    description: >-
+      Branch this action attests merges into. The preflight step skips events
+      whose merge/push branch does not match this value. Optional; defaults to
+      the repository's default branch (`github.event.repository.default_branch`).
+      Set explicitly when your release trunk is a non-default branch (for
+      example `release/main`) or to be tolerant of default-branch renames.
+    required: false
 
 runs:
   using: composite
   steps:
-    # Ensure the action only runs when a merge-onto-target-branch actually
-    # happened. Two independent checks:
+    # Ensure the action only runs when a merge onto the configured target
+    # branch actually happened. Two independent checks:
     #   1) The trigger is either a merged `pull_request: closed` event or a
     #      `push` (the caller filters branches via `on.push.branches`).
-    #   2) The branch that was merged into / pushed to is the repository's
-    #      default branch (`github.event.repository.default_branch`). This
-    #      auto-detects the target branch from the repo settings — no extra
-    #      input required — so PRs merging into feature/release branches, or
-    #      pushes to non-default branches, are skipped with a notice.
+    #   2) The branch that was merged into / pushed to matches TARGET_BRANCH.
+    #      TARGET_BRANCH resolves to the `target_branch` input when set, and
+    #      otherwise falls back to the repository default branch from the
+    #      event payload — so consumers can override for release-trunk names
+    #      like `release/main` without giving up the auto-detect default.
     # Everything else short-circuits with a notice before the JFrog CLI is
     # installed or OIDC is exchanged.
-    - name: Preflight — validate merge-onto-default-branch trigger
+    - name: Preflight — validate merge onto the target branch
       id: preflight
       shell: bash
       env:
@@ -52,6 +60,7 @@ runs:
         PR_MERGED: ${{ github.event.pull_request.merged }}
         PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
         PUSH_REF_NAME: ${{ github.ref_name }}
+        TARGET_BRANCH_INPUT: ${{ inputs.target_branch }}
         DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         set -euo pipefail
@@ -68,19 +77,20 @@ runs:
 
         if [[ "$merged_pr" != "true" && "$EVENT_NAME" != "push" ]]; then
           echo "should_run=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events or on push to the default branch (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
+          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events or on push to the target branch (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
           exit 0
         fi
 
-        if [[ -z "$DEFAULT_BRANCH" ]]; then
-          echo "::warning::JFrog Traceability preflight could not read the repository default branch from the event payload; proceeding without the target-branch check."
+        TARGET_BRANCH="${TARGET_BRANCH_INPUT:-$DEFAULT_BRANCH}"
+        if [[ -z "$TARGET_BRANCH" ]]; then
+          echo "::warning::JFrog Traceability preflight could not determine the target branch: the 'target_branch' input is empty and the repository default branch is missing from the event payload. Proceeding without the target-branch check."
           echo "should_run=true" >> "$GITHUB_OUTPUT"
           exit 0
         fi
 
-        if [[ "$event_branch" != "$DEFAULT_BRANCH" ]]; then
+        if [[ "$event_branch" != "$TARGET_BRANCH" ]]; then
           echo "should_run=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::Skipping JFrog Traceability — event branch '${event_branch}' is not the repository default branch '${DEFAULT_BRANCH}'."
+          echo "::notice::Skipping JFrog Traceability — event branch '${event_branch}' is not the configured target branch '${TARGET_BRANCH}'."
           exit 0
         fi
 
