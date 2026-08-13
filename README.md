@@ -235,6 +235,23 @@ Every other trigger (`pull_request` opened/synchronize/reopened, a closed but
 unmerged PR, `workflow_dispatch`, `branch_protection_rule`, `schedule`, …)
 short-circuits at the preflight step with a `notice`.
 
+### Supported merge strategies
+
+All three GitHub strategies produce a single canonical sha per merge and are
+supported by both triggers above:
+
+| Strategy | Entity id (`merge_commit_sha`) |
+|---|---|
+| Create a merge commit | The 2-parent merge commit sha |
+| Squash and merge | The squash commit sha |
+| Rebase and merge | The tip sha of the rebased range |
+
+For all three, approvers, `code_committers`, `commit_signatures`, and
+`all_commits_verified` are read from `/pulls/{N}/commits` and are complete.
+`commits_on_target_branch` reflects what landed on the target branch: the full
+range for merge commits, the single squash commit for squash, and the tip of
+the rebased range for rebase (the other rebased shas are not enumerated).
+
 ### Subscribing to a single trigger (recommended)
 
 Pick **one** of the two supported triggers in your workflow. The quick-start
