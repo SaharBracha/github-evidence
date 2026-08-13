@@ -2,48 +2,47 @@
 
 A single GitHub Action that collects **Git data** from your repository and
 records it as **signed JFrog evidence** on a `gitCommit` entity (keyed by the
-merge commit sha). It runs
-when a pull request is **merged into your main branch**, giving you a tamper-evident,
-cryptographically signed record of how each change was reviewed and how your
-repository was governed at that moment.
+merge commit sha). It runs when a pull request is **merged into a configured
+target branch** (for example `main`), giving you a tamper-evident,
+cryptographically signed record of how each change was reviewed at that moment.
 
 The action installs and configures the JFrog CLI for you — you only supply your
 JFrog OIDC provider and signing key.
 
 ## Why JFrog Traceability
 
-Teams enforce strong controls in GitHub — required pull-request reviews, branch
-protection, CODEOWNERS, signed commits — but that governance context stays in
-GitHub. By the time a build is promoted and released, there is no tamper-evident
-proof that a given change was actually reviewed, or that the repository was
-properly governed when the change merged. That **approval gap** is where
-unreviewed or unauthorized changes can slip into a release.
+Teams enforce strong controls in GitHub — required pull-request reviews, signed
+commits, and related merge gates — but that governance context stays in GitHub.
+By the time a build is promoted and released, there is no tamper-evident proof
+that a given change was actually reviewed when it merged. That **approval gap**
+is where unreviewed or unauthorized changes can slip into a release.
 
-JFrog Traceability closes the gap. It captures the Git governance behind each
-merge as **signed JFrog evidence** attached to your artifact in Artifactory, so
-the proof travels with the software. On promotion, **JFrog AppTrust** can
-automatically use this evidence and gate releases on it — turning
-review-and-merge controls into enforceable, auditable release policy.
+JFrog Traceability closes the gap. It captures the review-and-merge context
+behind each merge as **signed JFrog evidence** on the merge commit (and later
+surfaced on AppTrust application versions), so the proof travels with the
+software. On promotion, **JFrog AppTrust** can automatically use this evidence
+and gate releases on it — turning review-and-merge controls into enforceable,
+auditable release policy.
 
 ## What you get
 
-For every merged pull request, the action produces **one** signed evidence named
-`github-pull-request` attached to a `gitCommit` entity whose id is the merge
-commit sha (`<gitSha>`). The predicate carries the merged pull request
-under the `pull_request_merge` root key. It includes a **signed JSON predicate**
-(machine-readable, conforming to the published
-[`github-pull-request.json`](predicates/github-pull-request.json) schema) and a
-**human-readable report** you can open directly in the JFrog evidence **Content**
-tab.
+For every pull request merged into a **selected target branch** (the branches
+you list in the workflow `on.pull_request.branches` filter), the action produces
+**one** signed JFrog evidence named `github-pull-request` attached to a
+`gitCommit` entity whose id is the merge commit sha (`<gitSha>`). The evidence
+uses the [`github-pull-request.json`](predicates/github-pull-request.json)
+schema and includes a human-readable markdown report. Both the JSON predicate
+and the markdown are part of the signed evidence package you can open in the
+JFrog evidence **Content** tab.
 
 Everything is **read-only** against GitHub, and secret *values* are never fetched.
 
-### Merged pull request (`pull_request_merge` key)
+### Merged pull request (`pull_request_merge`)
 
 Who approved the PR, what commits it put on the target branch, who authored them,
-and each commit's cryptographic-signature verification status (`commit_signatures`
-plus an `all_commits_verified` summary). Lives under the predicate's
-`pull_request_merge` key (see the
+and signed-commits status and details (`commit_signatures` plus an
+`all_commits_verified` summary). Lives under the predicate's
+`pull_request_merge` section (see the
 [`github-pull-request.json`](predicates/github-pull-request.json) schema).
 
 Identity fields come straight from what GitHub attests, so each side is partial:
@@ -97,21 +96,34 @@ commit is signature-verified and that the merge carried at least one approval. S
 Once the action runs, the signed evidence lives in Artifactory — you do
 **not** need JFrog AppTrust to produce or store it.
 
-**Where it lives.** Each run attaches signed evidence to a non-artifact
-**entity** whose type is `gitCommit` and whose id is the merge commit sha
-(`<gitSha>`). Evidence stores it under the default `githubPullRequest-entity`
-repository (path under `.entities/gitCommit/...`).
+**Where it lives.** Each run attaches signed evidence to a **`gitCommit`
+entity** whose id is the merge commit sha (`<gitSha>`). Evidence stores it
+under the default `gitCommit-entity` repository (path under
+`.entities/gitCommit/...`).
 
-**How to retrieve and verify.** List evidence with the Evidence REST API
+**How to retrieve and verify.** Because `gitCommit-entity` holds merge
+commit evidence from **multiple GitHub repositories**, access is restricted by
+design to specific Artifactory permissions on that repository:
+
+| Permission | Needed to |
+|---|---|
+| **Read** | List and open evidence (REST, GraphQL, UI Content tab) and run `jf evidence verify` |
+| **Annotate** (with **Read**) | Create / attach new evidence (what the action’s OIDC identity needs) |
+
+List evidence with the Evidence REST API
 (`GET /evidence/api/v1/entity/gitCommit/<gitSha>`) or GraphQL
 `hasEntityWith(entity_type: "gitCommit", entity_id: "<gitSha>")`, and open the
 human-readable **Content** report in the JFrog UI. You can also
 cryptographically verify evidence with the JFrog CLI (`jf evidence verify`).
 
 **How it's used.** This evidence is a signed, auditable record that stands on its
-own — no AppTrust required. When the resulting artifact is later **promoted**,
-JFrog AppTrust automatically consumes this Git evidence to generate new AppTrust
-evidence, and AppTrust lifecycle policies can gate the promotion on it. See
+own — no AppTrust required. When the resulting artifact is later bundled inside
+an **AppTrust application version** and **promoted**, JFrog AppTrust
+automatically consumes this Git evidence to generate new AppTrust evidence, and
+AppTrust lifecycle policies can gate the promotion on it. The set of pull
+requests associated with each AppTrust application version depends on the
+previous application versions that reached **production** maturity, so two
+applications that include the same artifact can surface different PR lists. See
 [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
 
 ## Prerequisites
@@ -121,18 +133,27 @@ installs and configures the JFrog CLI for you (URL normalization, OIDC token
 exchange, and project selection) in its own step. The prerequisites are the
 platform-side setup:
 
-- An **entity repository** named `githubPullRequest-entity` in Artifactory
-  (Evidence does not create it automatically). The OIDC identity must be able to
-  annotate that repository.
+- An **entity repository** named `gitCommit-entity` in Artifactory
+  (Evidence does not create it automatically). The OIDC identity used by this
+  action must have **Read** and **Annotate** on that repository.
+  Treat **Read** carefully: this repository aggregates merge commit details
+  from every GitHub repository that writes evidence into the same Artifactory
+  instance. Grant Read only to identities that should see cross-repo merge
+  context (for example security / compliance auditors), not to broad developer
+  groups.
 - A platform Evidence service that includes **Evidence on Non-Artifacts**
-  (non-artifact entity APIs). Older Evidence builds that only support artifact
-  subjects are not compatible.
+  (entity APIs used for `gitCommit` subjects). Older Evidence builds that only
+  support artifact subjects are not compatible.
 - An **OIDC integration** under **Administration → OIDC**, with an identity
   mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
   access token is stored — the runner exchanges its GitHub OIDC token for JFrog
   access at run time.
-- An **evidence signing key** (private PEM) and its **alias** registered in the
-  platform. The signing key is the only secret you store in GitHub.
+- An **evidence signing key** (private PEM). Upload the matching **public** key
+  to the platform under the alias you will use (default alias:
+  `github-evidence`) via the UI or the
+  [Upload the Public Key to Artifactory](https://docs.jfrog.com/governance/docs/upload-the-public-key-to-artifactory)
+  REST API (`POST /artifactory/api/security/keys/trusted`). The private key is
+  the only secret you store in GitHub.
 
 See [Required secrets and variables](#required-secrets-and-variables) for how to
 wire these into your repository.
@@ -141,20 +162,24 @@ wire these into your repository.
 
 A one-time setup, in order:
 
-1. **Create the entity repository** `githubPullRequest-entity` in Artifactory.
-2. **Register the signing key** — upload your evidence signing key (private PEM)
-   to the platform and note its **alias**.
+1. **Create the entity repository** `gitCommit-entity` in Artifactory.
+   Limit **Read** (and **Annotate**) as described under
+   [Prerequisites](#prerequisites).
+2. **Register the signing key** — upload the public key to the platform with
+   alias `github-evidence` (or another alias you choose) using the
+   [public key upload API](https://docs.jfrog.com/governance/docs/upload-the-public-key-to-artifactory).
 3. **Configure OIDC** under **Administration → OIDC** with an identity mapping
    for this GitHub repository; note the **provider name**.
 4. **Add the GitHub secret and variables** (see
    [Required secrets and variables](#required-secrets-and-variables)):
-   `EVIDENCE_KEY` (secret), `JF_URL`, `JF_OIDC_PROVIDER`, `EVIDENCE_KEY_ALIAS`.
+   `EVIDENCE_KEY` (secret), `JF_URL`, `JF_OIDC_PROVIDER`. Add
+   `EVIDENCE_KEY_ALIAS` only if your public-key alias is not `github-evidence`.
 5. **Add the workflow** from [Quick start](#quick-start) to
    `.github/workflows/`.
 
-Merge a pull request into `main` and confirm the workflow succeeds; the evidence
-appears on the `gitCommit` entity for the merge sha (see
-[On the JFrog platform](#on-the-jfrog-platform)).
+Merge a pull request into `main` (or another configured branch) and confirm the
+workflow succeeds; the evidence appears on the `gitCommit` entity for the merge
+sha (see [On the JFrog platform](#on-the-jfrog-platform)).
 
 ## Quick start
 
@@ -181,15 +206,15 @@ jobs:
           jf_url: ${{ vars.JF_URL }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
           evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
-          evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}
+          # evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}  # optional; default github-evidence
 ```
 
 The `branches: [main]` filter scopes the workflow to pull requests targeting
 `main`, and the `closed` trigger plus the `if: ...merged == true` guard limits the
-job to merges — so closed-unmerged PRs produce nothing. Each merge into `main`
-then produces one `github-pull-request` evidence covering the merge. Add more
-branches to the list to cover additional release branches. A runnable copy lives in
-[`examples/git-evidence.yml`](examples/git-evidence.yml).
+job to merges — so closed-unmerged PRs produce nothing. Each merge into a listed
+branch then produces one `github-pull-request` evidence covering the merge. Add
+more branches to the list to cover additional release branches. A runnable copy
+lives in [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
 ## Inputs
 
@@ -198,7 +223,7 @@ branches to the list to cover additional release branches. A runnable copy lives
 | `jf_url` | yes | — | JFrog platform host (bare host or URL; normalized to `https://<host>/`). |
 | `oidc_provider_name` | yes | — | Name of the OIDC integration in the JFrog platform; the runner exchanges its GitHub OIDC token for JFrog access (no stored token). |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
-| `evidence_key_alias` | yes | — | Signing key alias registered in the JFrog platform. |
+| `evidence_key_alias` | no | `github-evidence` | Signing key alias registered in the JFrog platform. Set only if you registered the public key under a different alias. |
 
 GitHub data is read from `api.github.com` with the workflow's built-in
 `GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
@@ -232,7 +257,7 @@ event — there is no `pr_number` input.
 | `EVIDENCE_KEY` | secret | Private signing key (PEM). |
 | `JF_URL` | variable | JFrog platform host. |
 | `JF_OIDC_PROVIDER` | variable | Name of the OIDC integration configured in the JFrog platform. |
-| `EVIDENCE_KEY_ALIAS` | variable | Signing key alias. |
+| `EVIDENCE_KEY_ALIAS` | variable (optional) | Signing key alias. Required only when the public key was registered under an alias other than `github-evidence`. |
 
 Authentication uses OIDC, so there is no stored JFrog access token — the only
 secret is the signing key. Configure a matching OIDC integration in the JFrog
@@ -249,7 +274,8 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 | Symptom in the run log | Likely cause | Fix |
 |---|---|---|
 | OIDC token exchange fails in **Setup JFrog CLI** | `id-token: write` missing, or no OIDC identity mapping for this repo | Add the permission to the workflow and configure the mapping under **Administration → OIDC**. |
-| `evidence prepare failed` with `404` | The `githubPullRequest-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
-| `evidence prepare failed` (other) | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with non-artifact entity APIs. |
-| `evidence create failed` about the key/alias | `EVIDENCE_KEY_ALIAS` does not match a registered key, or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
+| `evidence prepare failed` with `404` | The `gitCommit-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
+| `evidence prepare failed` (other) | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
+| `evidence create failed` about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
+| `403` listing or opening evidence | Caller lacks **Read** on `gitCommit-entity` | Grant Read only to identities that should see cross-repo merge evidence. |

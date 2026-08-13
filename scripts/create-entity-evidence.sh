@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # (c) JFrog Ltd. (2026)
-# Creates signed JFrog evidence on a non-artifact entity via the Evidence
-# prepare + entity create APIs. Assumes the JFrog CLI is already configured
+# Creates signed JFrog evidence on a gitCommit entity via the Evidence prepare +
+# entity create APIs. Assumes the JFrog CLI is already configured
 # (setup-jfrog-cli / jf c) so `jf api` can authenticate against the platform.
 #
 # Required env: PREDICATE_FILE, PREDICATE_TYPE, ENTITY_TYPE, ENTITY_ID,
-#               EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
-# Optional env: MARKDOWN_FILE (human-readable report included in prepare),
+#               EVIDENCE_SIGNING_KEY.
+# Optional env: EVIDENCE_KEY_ALIAS (default github-evidence),
+#               MARKDOWN_FILE (human-readable report included in prepare),
 #               PROVIDER_ID (default github-actions).
 set -euo pipefail
 # This script writes the private signing key to disk. Force xtrace off so an
@@ -20,8 +21,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 : "${ENTITY_TYPE:?ENTITY_TYPE must be set}"
 : "${ENTITY_ID:?ENTITY_ID must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
-: "${EVIDENCE_KEY_ALIAS:?EVIDENCE_KEY_ALIAS must be set}"
 
+EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-github-evidence}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 
 if [[ ! -f "$PREDICATE_FILE" ]]; then

@@ -23,8 +23,12 @@ inputs:
     description: 'Private key (raw PEM contents) used to sign the evidence.'
     required: true
   evidence_key_alias:
-    description: 'Evidence signing key alias registered in the JFrog platform.'
-    required: true
+    description: >-
+      Evidence signing key alias registered in the JFrog platform. Defaults to
+      github-evidence; set only when the public key was registered under a
+      different alias.
+    required: false
+    default: 'github-evidence'
 
 runs:
   using: composite

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://jfrog.com/evidence/pull-request-merge/v1",
   "title": "Github Pull Request Evidence",
-  "description": "The github-pull-request predicate created by the jfrog/git-evidence action. Carries the merged pull request under the pull_request_merge root key.",
+  "description": "The github-pull-request predicate created by the jfrog/git-evidence action. Carries the merged pull request under the pull_request_merge section.",
   "type": "object",
   "additionalProperties": false,
   "required": [
