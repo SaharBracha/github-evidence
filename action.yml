@@ -32,13 +32,16 @@ inputs:
 runs:
   using: composite
   steps:
-    # Ensure the action runs at most once per merge, regardless of how the
-    # calling workflow is wired. Evidence is only recorded on the
-    # `pull_request: closed` event when `merged == true`; every other trigger
-    # (push to the target branch, pull_request opened/synchronize/reopened,
-    # unmerged close, workflow_dispatch, …) is skipped with a notice so no
-    # subsequent step spins up a runner or exchanges an OIDC token.
-    - name: Preflight — only run on merged pull requests
+    # Ensure the action only runs on triggers that unambiguously represent a
+    # merge onto the target branch — either a merged `pull_request: closed`
+    # event, or a `push` (the caller filters branches via `on.push.branches`).
+    # Every other trigger (pull_request opened/synchronize/reopened, unmerged
+    # close, workflow_dispatch, branch_protection_rule, …) is skipped with a
+    # notice, before the JFrog CLI is installed or OIDC is exchanged. When a
+    # caller subscribes to both events simultaneously, `concurrency` in the
+    # calling workflow (grouped on the merge sha) is what keeps writes to a
+    # single one — see the README.
+    - name: Preflight — only run on merge-onto-branch triggers
       id: preflight
       shell: bash
       env:
@@ -47,13 +50,17 @@ runs:
         PR_MERGED: ${{ github.event.pull_request.merged }}
       run: |
         set -euo pipefail
+        merged_pr=false
         if [[ "$EVENT_NAME" == "pull_request" \
            && "$EVENT_ACTION" == "closed" \
            && "$PR_MERGED" == "true" ]]; then
+          merged_pr=true
+        fi
+        if [[ "$merged_pr" == "true" || "$EVENT_NAME" == "push" ]]; then
           echo "should_run=true" >> "$GITHUB_OUTPUT"
         else
           echo "should_run=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
+          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events or on push to the target branch (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
         fi
 
     - name: Normalize JFrog URL

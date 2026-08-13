@@ -216,14 +216,84 @@ branch then produces one `github-pull-request` evidence covering the merge. Add
 more branches to the list to cover additional release branches. A runnable copy
 lives in [`examples/git-evidence.yml`](examples/git-evidence.yml).
 
-**Run-once guarantee.** The action itself also enforces this: it runs to
-completion only on a `pull_request: closed` event with
-`merged == true`. Any other trigger the caller might listen to (a `push` to
-the target branch, `pull_request` opened/synchronize/reopened, a closed but
-unmerged PR, `workflow_dispatch`, etc.) is skipped early with a workflow
-notice, before the JFrog CLI is installed or OIDC is exchanged. This means a
-single merge produces exactly one evidence document even if the calling
-workflow subscribes to broader events.
+### Supported triggers
+
+The action's preflight step accepts exactly two kinds of trigger and skips
+everything else with a workflow notice — before the JFrog CLI is installed or
+OIDC is exchanged, so skipped runs are essentially free.
+
+- **`pull_request: closed` with `merged == true`** _(recommended)_. Full PR
+  context (number, approvers) is available directly from the event payload.
+  Use this whenever possible.
+- **`push` to the target branch.** The collector resolves the associated PR
+  from the merge commit sha via the GitHub API. Use this if the target branch
+  is updated by mechanisms that don't fire `pull_request: closed` (for
+  example, merge queues that push instead of merging via the PR API, or
+  callers that only expose the `push` event).
+
+Every other trigger (`pull_request` opened/synchronize/reopened, a closed but
+unmerged PR, `workflow_dispatch`, `branch_protection_rule`, `schedule`, …)
+short-circuits at the preflight step with a `notice`.
+
+### Subscribing to a single trigger (recommended)
+
+Pick **one** of the two supported triggers in your workflow. The quick-start
+example above uses `pull_request`; a `push`-based equivalent looks like:
+
+```yaml
+name: JFrog Traceability
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+jobs:
+  git-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: jfrog/github-evidence@v1
+        with:
+          jf_url: ${{ vars.JF_URL }}
+          oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
+          evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
+```
+
+### Subscribing to both triggers — avoiding duplicates
+
+If your workflow already subscribes to **both** `pull_request` and `push` (for
+example because another job in the same workflow needs those triggers), a
+single merge will fire the action twice — once from each event — and both
+runs will attach an evidence document to the same `gitCommit` entity for the
+same merge sha.
+
+To keep the "one evidence per merge" invariant, add a **job-level
+`concurrency`** grouped on the merge sha. GitHub cancels or queues the second
+concurrent run, so only one attaches evidence:
+
+```yaml
+jobs:
+  git-evidence:
+    concurrency:
+      group: git-evidence-${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: jfrog/github-evidence@v1
+        with:
+          jf_url: ${{ vars.JF_URL }}
+          oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
+          evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
+```
+
+The `merge_commit_sha || github.sha` expression uses the PR's merge-commit sha
+when the trigger is `pull_request`, and falls back to the pushed commit sha
+when the trigger is `push`. Since both events converge on the same sha for a
+given merge, both would-be runs land in the same concurrency group and only
+one proceeds.
 
 ## Inputs
 
@@ -287,5 +357,6 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 | `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
 | `jf evd create` fails about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
-| `notice: Skipping JFrog Traceability …` and no evidence is created | The calling workflow invoked the action on a non-merged trigger (e.g. `push`, `pull_request: opened`, an unmerged close) | Expected — the built-in run-once guard skips everything except `pull_request: closed` with `merged == true`. Narrow the workflow's triggers if you want to avoid the empty run. |
+| `notice: Skipping JFrog Traceability …` and no evidence is created | The calling workflow invoked the action on an unsupported trigger (e.g. `pull_request: opened`, an unmerged close, `workflow_dispatch`, `branch_protection_rule`) | Expected — the built-in guard only accepts `pull_request: closed` with `merged == true` or `push`. See [Supported triggers](#supported-triggers). |
+| Two runs succeed for the same merge and two evidence documents appear on the `gitCommit` entity | The workflow subscribes to both `pull_request` and `push` events without concurrency grouping | Add job-level `concurrency` grouped on the merge sha, per [Subscribing to both triggers — avoiding duplicates](#subscribing-to-both-triggers--avoiding-duplicates). |
 | `403` listing or opening evidence | Caller lacks **Read** on `gitCommit-entity` | Grant Read only to identities that should see cross-repo merge evidence. |
