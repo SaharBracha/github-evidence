@@ -12,8 +12,9 @@
 #
 # Required env: GITHUB_REPOSITORY, GITHUB_SHA (or PR_NUMBER), plus everything
 #   the collector / build / create scripts require (GITHUB_TOKEN,
-#   EVIDENCE_SIGNING_KEY, ...). When PR_NUMBER is not set
-#   (e.g. push-to-main runs), it is resolved from GITHUB_SHA via the GitHub API.
+#   EVIDENCE_SIGNING_KEY, ...). PR_NUMBER is normally taken from the
+#   triggering pull_request event; if unset, it is resolved from GITHUB_SHA
+#   via the GitHub API as a fallback.
 # Optional env: EVIDENCE_KEY_ALIAS (default github-evidence).
 set -euo pipefail
 

@@ -222,33 +222,28 @@ The action's preflight step runs two independent checks and skips (before the
 JFrog CLI is installed or OIDC is exchanged) if either fails, so skipped runs
 are essentially free:
 
-1. **Trigger check.** The event must be either a merged `pull_request: closed`
-   or a `push`. Everything else (`pull_request` opened/synchronize/reopened, a
-   closed but unmerged PR, `workflow_dispatch`, `branch_protection_rule`,
-   `schedule`, …) is skipped with a `notice`.
-2. **Target-branch check.** The branch the event merged into (for
-   `pull_request`, `github.event.pull_request.base.ref`) or the branch that
-   was pushed (for `push`, `github.ref_name`) must equal the **target
-   branch**. The target branch is the `target_branch` input when set, and
-   otherwise falls back to the repository's default branch from the event
-   payload (`github.event.repository.default_branch`). PRs merging into
-   feature or unlisted release branches, or pushes to non-target branches,
-   are skipped with a `notice`.
+1. **Trigger check.** The event must be `pull_request: closed` with
+   `merged == true`. Every other event — `pull_request`
+   opened/synchronize/reopened, a closed but unmerged PR, `push`,
+   `workflow_dispatch`, `branch_protection_rule`, `schedule`, … — is
+   skipped with a `notice`. `push` is deliberately rejected so a single
+   merge cannot fan out to two runs when a caller workflow subscribes to
+   both `pull_request` and `push`.
+2. **Target-branch check.** The branch the PR merged into
+   (`github.event.pull_request.base.ref`) must equal the **target branch**.
+   The target branch is the `target_branch` input when set, and otherwise
+   falls back to the repository's default branch from the event payload
+   (`github.event.repository.default_branch`). PRs merging into feature or
+   unlisted release branches are skipped with a `notice`.
 
-The two accepted triggers, once past the target-branch check:
-
-- **`pull_request: closed` with `merged == true`** _(recommended)_. Full PR
-  context (number, approvers) is available directly from the event payload.
-- **`push` to the target branch.** The collector resolves the associated PR
-  from the merge commit sha via the GitHub API. Use this when the target
-  branch is updated by mechanisms that don't fire `pull_request: closed`
-  (merge queues that push instead of merging via the PR API, callers that
-  only expose the `push` event, etc.).
+Because the action only accepts one trigger, subscribing to `pull_request` in
+your workflow guarantees exactly one run per merge into the target branch —
+no `concurrency` block or extra job-level `if` is required.
 
 ### Supported merge strategies
 
 All three GitHub strategies produce a single canonical sha per merge and are
-supported by both triggers above:
+supported:
 
 | Strategy | Entity id (`merge_commit_sha`) |
 |---|---|
@@ -262,66 +257,6 @@ For all three, approvers, `code_committers`, `commit_signatures`, and
 range for merge commits, the single squash commit for squash, and the tip of
 the rebased range for rebase (the other rebased shas are not enumerated).
 
-### Subscribing to a single trigger (recommended)
-
-Pick **one** of the two supported triggers in your workflow. The quick-start
-example above uses `pull_request`; a `push`-based equivalent looks like:
-
-```yaml
-name: JFrog Traceability
-on:
-  push:
-    branches: [main]
-permissions:
-  contents: read
-  pull-requests: read
-  id-token: write
-jobs:
-  git-evidence:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: jfrog/github-evidence@v1
-        with:
-          jf_url: ${{ vars.JF_URL }}
-          oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
-          evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
-```
-
-### Subscribing to both triggers — avoiding duplicates
-
-If your workflow already subscribes to **both** `pull_request` and `push` (for
-example because another job in the same workflow needs those triggers), a
-single merge will fire the action twice — once from each event — and both
-runs will attach an evidence document to the same `gitCommit` entity for the
-same merge sha.
-
-To keep the "one evidence per merge" invariant, add a **job-level
-`concurrency`** grouped on the merge sha. GitHub cancels or queues the second
-concurrent run, so only one attaches evidence:
-
-```yaml
-jobs:
-  git-evidence:
-    concurrency:
-      group: git-evidence-${{ github.event.pull_request.merge_commit_sha || github.sha }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: jfrog/github-evidence@v1
-        with:
-          jf_url: ${{ vars.JF_URL }}
-          oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
-          evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
-```
-
-The `merge_commit_sha || github.sha` expression uses the PR's merge-commit sha
-when the trigger is `pull_request`, and falls back to the pushed commit sha
-when the trigger is `push`. Since both events converge on the same sha for a
-given merge, both would-be runs land in the same concurrency group and only
-one proceeds.
-
 ## Inputs
 
 | Input | Required | Default | Description |
@@ -330,7 +265,7 @@ one proceeds.
 | `oidc_provider_name` | yes | — | Name of the OIDC integration in the JFrog platform; the runner exchanges its GitHub OIDC token for JFrog access (no stored token). |
 | `evidence_signing_key` | yes | — | Private key (raw PEM contents) used to sign the evidence. |
 | `evidence_key_alias` | no | `github-evidence` | Signing key alias registered in the JFrog platform. Set only if you registered the public key under a different alias. |
-| `target_branch` | no | `github.event.repository.default_branch` | Branch this action attests merges into. The preflight step skips events whose merge/push branch does not match. Set explicitly when your release trunk is a non-default branch (for example `release/main`), or to be tolerant of default-branch renames. |
+| `target_branch` | no | `github.event.repository.default_branch` | Branch this action attests merges into. The preflight step skips events whose PR base branch does not match. Set explicitly when your release trunk is a non-default branch (for example `release/main`), or to be tolerant of default-branch renames. |
 
 GitHub data is read from `api.github.com` with the workflow's built-in
 `GITHUB_TOKEN` (grant it `contents: read` and `pull-requests: read`).
@@ -385,7 +320,6 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 | `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
 | `jf evd create` fails about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
-| `notice: Skipping JFrog Traceability … this action only records evidence on merged pull_request events or on push …` | Preflight trigger check failed | Expected — see [Supported triggers and target-branch validation](#supported-triggers-and-target-branch-validation). |
-| `notice: Skipping JFrog Traceability — event branch 'X' is not the configured target branch 'Y'` | Preflight target-branch check failed (merge/push landed on a branch other than `target_branch` or the repo default) | Expected — evidence is only recorded for merges into the configured target branch. Override with the `target_branch` input, or change the repo's default branch in Settings. |
-| Two runs succeed for the same merge and two evidence documents appear on the `gitCommit` entity | The workflow subscribes to both `pull_request` and `push` events; both pass the preflight | Add job-level `concurrency` grouped on the merge sha, per [Subscribing to both triggers — avoiding duplicates](#subscribing-to-both-triggers--avoiding-duplicates). |
+| `notice: Skipping JFrog Traceability … this action only records evidence on merged pull_request events …` | Preflight trigger check failed (event was not `pull_request: closed` with `merged == true`) | Expected — see [Supported triggers and target-branch validation](#supported-triggers-and-target-branch-validation). Subscribe your workflow to `pull_request` with `types: [closed]`; other triggers (including `push`) are intentionally rejected. |
+| `notice: Skipping JFrog Traceability — event branch 'X' is not the configured target branch 'Y'` | Preflight target-branch check failed (PR merged into a branch other than `target_branch` or the repo default) | Expected — evidence is only recorded for merges into the configured target branch. Override with the `target_branch` input, or change the repo's default branch in Settings. |
 | `403` listing or opening evidence | Caller lacks **Read** on `gitCommit-entity` | Grant Read only to identities that should see cross-repo merge evidence. |
