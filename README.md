@@ -61,10 +61,9 @@ All three GitHub merge strategies (merge commit, squash, rebase) are supported.
 
 One-time platform setup:
 
-1. **Entity repository** `gitCommit-entity` in Artifactory. The action's OIDC identity needs **Read** and **Annotate**. This repo aggregates merge context across every GitHub repository writing to the same platform — grant Read narrowly (auditors, not broad dev groups).
-2. **Evidence signing key** — upload the public key under alias `github-evidence` (or your own) via the [public key upload API](https://docs.jfrog.com/governance/docs/upload-the-public-key-to-artifactory). Store the private PEM as the `EVIDENCE_KEY` secret.
-3. **OIDC integration** under **Administration → OIDC** with an identity mapping for this repository.
-4. **GitHub config**: secret `EVIDENCE_KEY`; variables `JF_URL`, `JF_OIDC_PROVIDER` (and `EVIDENCE_KEY_ALIAS` if non-default).
+1. **Evidence signing key** — upload the public key under alias `github-evidence` (or your own) via the [public key upload API](https://docs.jfrog.com/governance/docs/upload-the-public-key-to-artifactory). Store the private PEM as the `EVIDENCE_KEY` secret.
+2. **OIDC integration** under **Administration → OIDC** with an identity mapping for this repository.
+3. **GitHub config**: secret `EVIDENCE_KEY`; variables `JF_URL`, `JF_OIDC_PROVIDER` (and `EVIDENCE_KEY_ALIAS` if non-default).
 
 The platform's Evidence service must support **entity evidence APIs** (not just artifact subjects).
 
