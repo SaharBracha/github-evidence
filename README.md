@@ -70,8 +70,6 @@ The platform's Evidence service must support **entity evidence APIs** (not just 
 
 ## On the JFrog platform
 
-Evidence is stored under `.entities/gitCommit/...` in the `gitCommit-entity` repo, and can be retrieved via the Evidence REST API, GraphQL, `jf evidence verify`, or the platform UI's **Content** tab.
-
 When the merged artifact is bundled into an **AppTrust application version** and promoted, AppTrust consumes this evidence automatically and lifecycle policies can gate the promotion. See [AppTrust lifecycle policies](https://jfrog.com/help/r/jfrog-apptrust-documentation/lifecycle-policy-management).
 
 ## Troubleshooting
