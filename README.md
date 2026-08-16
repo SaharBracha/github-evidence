@@ -141,8 +141,8 @@ are the platform-side setup:
   instance. Grant Read only to identities that should see cross-repo merge
   context (for example security / compliance auditors), not to broad developer
   groups.
-- A platform Evidence service that includes **Evidence on Non-Artifacts**
-  (entity APIs used for `gitCommit` subjects). Older Evidence builds that only
+- A platform Evidence service that supports **entity evidence APIs** (used to
+  attach evidence to `gitCommit` subjects). Older Evidence builds that only
   support artifact subjects are not compatible.
 - An **OIDC integration** under **Administration → OIDC**, with an identity
   mapping for this repository. Authentication uses OIDC, so no long-lived JFrog
@@ -321,7 +321,7 @@ Pin the moving major tag `@v1` for automatic minor/patch updates, or a full
 |---|---|---|
 | OIDC token exchange fails in **Setup JFrog CLI** | `id-token: write` missing, or no OIDC identity mapping for this repo | Add the permission to the workflow and configure the mapping under **Administration → OIDC**. |
 | `jf evd create` fails with `404` | The `gitCommit-entity` repository does not exist | Create it in Artifactory (it is not created automatically). |
-| `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **Evidence on Non-Artifacts** support | Upgrade to an Evidence build with entity APIs. |
+| `jf evd create` fails with another `4xx`/`5xx` | Platform lacks **entity evidence API** support | Upgrade to an Evidence build that supports entity subjects (e.g. `gitCommit`). |
 | `jf evd create` fails about the key/alias | Public-key alias does not match (`github-evidence` by default, or `EVIDENCE_KEY_ALIAS`), or `EVIDENCE_KEY` is not the matching PEM | Re-check the alias and that the secret holds the full private PEM. |
 | The job is skipped entirely | PR was closed without merging, or targeted a branch not in the `branches` filter | Expected — evidence is produced only on merges to the configured branches. |
 | `notice: Skipping JFrog Traceability … this action only records evidence on push events to the target branch …` | Preflight trigger check failed (event was not a `push`) | Expected — see [Supported triggers and target-branch validation](#supported-triggers-and-target-branch-validation). Subscribe your workflow to `push` with `branches: [main]` (or your target branch); other triggers (including `pull_request`) are intentionally rejected. |

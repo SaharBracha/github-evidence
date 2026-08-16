@@ -8,8 +8,8 @@ Default sample data is [`fixtures/unified-github-pull-request-predicate.json`](f
 (unified github-pull-request predicate). Markdown is rendered from that predicate with
 [`build-markdown.sh`](build-markdown.sh). The entity id defaults to
 `.pull_request_merge.merge.merge_commit_sha` read from the fixture.
-Requires a platform Evidence build that includes non-artifact entity APIs
-(Evidence on Non-Artifacts).
+Requires a platform Evidence build that supports entity evidence APIs (i.e.
+attaching evidence to entity subjects such as `gitCommit`).
 ## Prerequisites
 - `curl`, `jq`, `node`, `openssl`
 - Artifactory repository named **`gitCommit-entity`**
