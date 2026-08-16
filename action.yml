@@ -42,37 +42,36 @@ runs:
   steps:
     # Ensure the action only runs when a merge onto the configured target
     # branch actually happened. Two independent checks:
-    #   1) The trigger is a merged `pull_request: closed` event. Every other
-    #      event (including `push`) is rejected here so a single merge can
-    #      never fan out to multiple runs when the caller workflow subscribes
-    #      to overlapping triggers.
-    #   2) The branch the PR merged into matches TARGET_BRANCH.
+    #   1) The trigger is a `push` event. Every other event (including
+    #      merged `pull_request: closed` events) is rejected here so a
+    #      single merge can never fan out to multiple runs when the caller
+    #      workflow subscribes to overlapping triggers, and so the run is
+    #      always attached to the merge commit on the target branch (rather
+    #      than the PR head SHA on the source branch).
+    #   2) The pushed branch matches TARGET_BRANCH.
     #      TARGET_BRANCH resolves to the `target_branch` input when set, and
     #      otherwise falls back to the repository default branch from the
     #      event payload — so consumers can override for release-trunk names
     #      like `release/main` without giving up the auto-detect default.
     # Everything else short-circuits with a notice before the JFrog CLI is
     # installed or OIDC is exchanged.
-    - name: Preflight — validate merge onto the target branch
+    - name: Preflight — validate push onto the target branch
       id: preflight
       shell: bash
       env:
         EVENT_NAME: ${{ github.event_name }}
         EVENT_ACTION: ${{ github.event.action }}
-        PR_MERGED: ${{ github.event.pull_request.merged }}
-        PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        PUSH_REF_NAME: ${{ github.ref_name }}
         TARGET_BRANCH_INPUT: ${{ inputs.target_branch }}
         DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         set -euo pipefail
-        if [[ "$EVENT_NAME" != "pull_request" \
-           || "$EVENT_ACTION" != "closed" \
-           || "$PR_MERGED" != "true" ]]; then
+        if [[ "$EVENT_NAME" != "push" ]]; then
           echo "should_run=false" >> "$GITHUB_OUTPUT"
-          echo "::notice::Skipping JFrog Traceability — this action only records evidence on merged pull_request events (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>}, merged=${PR_MERGED:-<none>})."
+          echo "::notice::Skipping JFrog Traceability — this action only records evidence on push events to the target branch (event=${EVENT_NAME}, action=${EVENT_ACTION:-<none>})."
           exit 0
         fi
-        event_branch="$PR_BASE_REF"
+        event_branch="$PUSH_REF_NAME"
 
         TARGET_BRANCH="${TARGET_BRANCH_INPUT:-$DEFAULT_BRANCH}"
         if [[ -z "$TARGET_BRANCH" ]]; then
