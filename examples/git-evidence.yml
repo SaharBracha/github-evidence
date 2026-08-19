@@ -21,12 +21,9 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
-
       - uses: jfrog/github-evidence@v1
         with:
           jf_url: ${{ vars.JF_URL }}
           oidc_provider_name: ${{ vars.JF_OIDC_PROVIDER }}
           evidence_signing_key: ${{ secrets.EVIDENCE_KEY }}
-          # Optional — only if the public key alias is not github-evidence:
-          # evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}
+          evidence_key_alias: ${{ vars.EVIDENCE_KEY_ALIAS }}

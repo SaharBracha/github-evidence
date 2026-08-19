@@ -6,9 +6,8 @@
 # platform.
 #
 # Required env: PREDICATE_FILE, PREDICATE_TYPE, ENTITY_TYPE, ENTITY_ID,
-#               EVIDENCE_SIGNING_KEY.
-# Optional env: EVIDENCE_KEY_ALIAS (default github-evidence),
-#               MARKDOWN_FILE (human-readable report attached to the evidence),
+#               EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS.
+# Optional env: MARKDOWN_FILE (human-readable report attached to the evidence),
 #               PROVIDER_ID (default github-actions).
 set -euo pipefail
 # This script writes the private signing key to disk. Force xtrace off so an
@@ -24,8 +23,8 @@ source "${SCRIPT_DIR}/lib/common.sh"
 : "${ENTITY_TYPE:?ENTITY_TYPE must be set}"
 : "${ENTITY_ID:?ENTITY_ID must be set}"
 : "${EVIDENCE_SIGNING_KEY:?EVIDENCE_SIGNING_KEY must be set}"
+: "${EVIDENCE_KEY_ALIAS:?EVIDENCE_KEY_ALIAS must be set}"
 
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
 PROVIDER_ID="${PROVIDER_ID:-github-actions}"
 
 if [[ ! -f "$PREDICATE_FILE" ]]; then
