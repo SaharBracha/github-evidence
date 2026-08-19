@@ -14,16 +14,17 @@ attaching evidence to entity subjects such as `gitCommit`).
 - `curl`, `jq`, `node`, `openssl`
 - Artifactory repository named **`gitCommit-entity`**
 - Access token that can **annotate** that repository
-- Evidence signing key (private PEM) whose public key is registered under alias
-  `github-evidence` (or set `EVIDENCE_KEY_ALIAS` to match a different alias)
+- Evidence signing key (private PEM) whose public key is registered under the
+  alias you pass as `EVIDENCE_KEY_ALIAS`
 ## Run
 From the repository root:
 ```bash
 JF_URL=http://localhost:8082 \
 EVIDENCE_SIGNING_KEY_FILE=./private.pem \
+EVIDENCE_KEY_ALIAS=<key-alias> \
 bash scripts/smoke-entity-evidence.sh
 ```
-Or with the PEM contents in the environment (and a custom alias):
+Or with the PEM contents in the environment:
 ```bash
 JF_URL=http://localhost:8082 \
 EVIDENCE_SIGNING_KEY="$(cat ./private.pem)" \
@@ -36,7 +37,7 @@ bash scripts/smoke-entity-evidence.sh
 | `JF_ACCESS_TOKEN` | yes | Bearer token |
 | `EVIDENCE_SIGNING_KEY_FILE` | one of | Path to private PEM file |
 | `EVIDENCE_SIGNING_KEY` | one of | Private PEM contents |
-| `EVIDENCE_KEY_ALIAS` | no | Signing key alias in Artifactory (default: `github-evidence`) |
+| `EVIDENCE_KEY_ALIAS` | yes | Signing key alias in Artifactory |
 | `ENTITY_TYPE` | no | Entity type (default: `gitCommit`) |
 | `ENTITY_ID` | no | Entity id (default: `.pull_request_merge.merge.merge_commit_sha` from the fixture) |
 | `PREDICATE_FILE` | no | Predicate JSON (default: unified fixture) |

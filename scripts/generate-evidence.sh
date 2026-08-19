@@ -12,9 +12,8 @@
 #
 # Required env: GITHUB_REPOSITORY, GITHUB_SHA (or PR_NUMBER), plus everything
 #   the collector / build / create scripts require (GITHUB_TOKEN,
-#   EVIDENCE_SIGNING_KEY, ...). PR_NUMBER is resolved from GITHUB_SHA
-#   (the pushed merge commit) via the GitHub API.
-# Optional env: EVIDENCE_KEY_ALIAS (default github-evidence).
+#   EVIDENCE_SIGNING_KEY, EVIDENCE_KEY_ALIAS, ...). PR_NUMBER is resolved from
+#   GITHUB_SHA (the pushed merge commit) via the GitHub API.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"

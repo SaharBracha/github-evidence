@@ -9,9 +9,9 @@
 #   JF_URL              Platform base URL, e.g. http://localhost:8082
 #   JF_ACCESS_TOKEN     Bearer token with annotate on gitCommit-entity
 #   EVIDENCE_SIGNING_KEY  Private PEM contents, or set EVIDENCE_SIGNING_KEY_FILE
+#   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory
 #
 # Optional env:
-#   EVIDENCE_KEY_ALIAS  Key alias registered in Artifactory (default: github-evidence)
 #   ENTITY_TYPE         Default: gitCommit
 #   ENTITY_ID           Default: merge commit sha from the fixture
 #                       (.pull_request_merge.merge.merge_commit_sha)
@@ -35,8 +35,7 @@ DEFAULT_PREDICATE="${SCRIPT_DIR}/fixtures/unified-github-pull-request-predicate.
 
 : "${JF_URL:?JF_URL must be set}"
 : "${JF_ACCESS_TOKEN:?JF_ACCESS_TOKEN must be set}"
-
-EVIDENCE_KEY_ALIAS="${EVIDENCE_KEY_ALIAS:-$(default_evidence_key_alias)}"
+: "${EVIDENCE_KEY_ALIAS:?EVIDENCE_KEY_ALIAS must be set}"
 
 if [[ -n "${EVIDENCE_SIGNING_KEY_FILE:-}" ]]; then
   EVIDENCE_SIGNING_KEY="$(< "$EVIDENCE_SIGNING_KEY_FILE")"

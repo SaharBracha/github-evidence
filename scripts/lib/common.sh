@@ -8,13 +8,6 @@
 # Standard runner-provided environment used below: GITHUB_REPOSITORY,
 # GITHUB_SERVER_URL, GITHUB_RUN_ID.
 
-# Default alias for the public evidence signing key registered in the JFrog
-# platform. Single source of truth for the default — action.yml leaves the
-# input empty and the scripts fall back to this value via the helper below.
-default_evidence_key_alias() {
-  printf 'github-evidence'
-}
-
 # Split GITHUB_REPOSITORY ("owner/name") into the canonical GH_OWNER / GH_REPO
 # globals every script uses. Honors pre-set values so a caller can override.
 resolve_owner_repo() {
