@@ -65,9 +65,9 @@ One-time platform setup:
 ```bash
 jf evd generate-key-pair --key-alias my-key-alias
 ```
+Store the resulting private PEM as the `EVIDENCE_KEY` secret.
 
-   Store the resulting private PEM as the `EVIDENCE_KEY` secret.
-2. **OIDC integration** under **Administration → OIDC** with an identity mapping for this repository.
+2. **OIDC integration** under **Administration → OIDC** with an identity mapping for this repository. The identity the token maps to needs at least **Read** and **Annotate** permissions on the target repository to upload evidence.
 3. **GitHub config**: secret `EVIDENCE_KEY`; variables `JF_URL`, `JF_OIDC_PROVIDER`, `EVIDENCE_KEY_ALIAS`.
 
 ## On the JFrog platform
